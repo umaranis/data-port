@@ -1,4 +1,6 @@
 <script lang="ts">
+  import * as Tabs from "$lib/components/ui/tabs";
+
   type Props = {
     filePath: string;
     sheets: string[];
@@ -9,21 +11,12 @@
   let { filePath, sheets, onselect, selectedSheet = null }: Props = $props();
 </script>
 
-<div class="text-left mt-4">
-  <h3 class="font-semibold mb-1">Sheets</h3>
-  <ul class="list-none pl-0 space-y-1">
-    {#each sheets as sheet}
-      <li>
-        <button
-          onclick={() => onselect(sheet)}
-          class="px-3 py-1 rounded text-sm w-full text-left transition-colors
-            {sheet === selectedSheet
-              ? 'bg-blue-600 text-white'
-              : 'hover:bg-gray-100 dark:hover:bg-gray-700'}"
-        >
-          {sheet}
-        </button>
-      </li>
-    {/each}
-  </ul>
+<div class="mt-4 w-full max-w-3xl">
+  <Tabs.Root value={selectedSheet ?? undefined} onValueChange={onselect}>
+    <Tabs.List>
+      {#each sheets as sheet}
+        <Tabs.Trigger value={sheet}>{sheet}</Tabs.Trigger>
+      {/each}
+    </Tabs.List>
+  </Tabs.Root>
 </div>
