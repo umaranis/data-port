@@ -2,43 +2,7 @@
   import FileSelector from "$lib/FileSelector.svelte";
 </script>
 
-<main class="container">
-  <h1>Data Port</h1>
+<main class="flex flex-col items-center pt-[10vh] px-4">
+  <h1 class="text-2xl font-bold mb-6">Data Port</h1>
   <FileSelector />
 </main>
-
-<style>
-  :root {
-    font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
-    font-size: 16px;
-    line-height: 24px;
-    font-weight: 400;
-    color: #0f0f0f;
-    background-color: #f6f6f6;
-    font-synthesis: none;
-    text-rendering: optimizeLegibility;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    -webkit-text-size-adjust: 100%;
-  }
-
-  .container {
-    margin: 0;
-    padding-top: 10vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-  }
-
-  h1 {
-    margin-bottom: 1.5rem;
-  }
-
-  @media (prefers-color-scheme: dark) {
-    :root {
-      color: #f6f6f6;
-      background-color: #2f2f2f;
-    }
-  }
-</style>

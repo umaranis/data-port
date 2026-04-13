@@ -26,21 +26,26 @@
   }
 </script>
 
-<div class="file-selector">
-  <button onclick={selectFile}>Select Excel File</button>
+<div class="flex flex-col items-center gap-3">
+  <button
+    onclick={selectFile}
+    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-colors cursor-pointer"
+  >
+    Select Excel File
+  </button>
 
   {#if filePath}
-    <p class="file-path">{filePath}</p>
+    <p class="text-sm text-gray-500 dark:text-gray-400 break-all max-w-lg">{filePath}</p>
   {/if}
 
   {#if error}
-    <p class="error">{error}</p>
+    <p class="text-red-600 dark:text-red-400">{error}</p>
   {/if}
 
   {#if sheets.length > 0}
-    <div class="sheets">
-      <h3>Sheets</h3>
-      <ul>
+    <div class="text-left">
+      <h3 class="font-semibold mb-1">Sheets</h3>
+      <ul class="list-disc pl-6">
         {#each sheets as sheet}
           <li>{sheet}</li>
         {/each}
@@ -48,36 +53,3 @@
     </div>
   {/if}
 </div>
-
-<style>
-  .file-selector {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.75rem;
-  }
-
-  .file-path {
-    font-size: 0.85em;
-    color: #666;
-    word-break: break-all;
-    max-width: 500px;
-  }
-
-  .error {
-    color: #c0392b;
-  }
-
-  .sheets {
-    text-align: left;
-  }
-
-  .sheets h3 {
-    margin-bottom: 0.25rem;
-  }
-
-  .sheets ul {
-    list-style: disc;
-    padding-left: 1.5rem;
-  }
-</style>

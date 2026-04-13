@@ -17,13 +17,27 @@
     "@tauri-apps/plugin-dialog": "^2.7.0",
     "@tauri-apps/plugin-opener": "^2.5.3"
   },
+  "pnpm": {
+    "packageExtensions": {
+      "@sveltejs/vite-plugin-svelte@*": {
+        "peerDependencies": { "jiti": "*", "lightningcss": "*" }
+      },
+      "vitefu@*": {
+        "peerDependencies": { "jiti": "*", "lightningcss": "*" }
+      }
+    }
+  },
   "devDependencies": {
     "@sveltejs/adapter-static": "^3.0.10",
     "@sveltejs/kit": "^2.57.1",
     "@sveltejs/vite-plugin-svelte": "^5.1.1",
+    "@tailwindcss/vite": "^4.2.2",
     "@tauri-apps/cli": "^2.10.1",
+    "jiti": "^2.6.1",
+    "lightningcss": "^1.32.0",
     "svelte": "^5.55.3",
     "svelte-check": "^4.4.6",
+    "tailwindcss": "^4.2.2",
     "typescript": "~5.6.3",
     "vite": "^6.4.2"
   }
