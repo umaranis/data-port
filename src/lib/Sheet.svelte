@@ -1,4 +1,6 @@
 <script lang="ts">
+  import * as Table from "$lib/components/ui/table";
+
   type Props = {
     rows: string[][];
   };
@@ -8,18 +10,16 @@
 
 {#if rows.length > 0}
   <div class="mt-4 overflow-x-auto">
-    <table class="text-sm border-collapse">
-      <tbody>
-        {#each rows as row, i}
-          <tr class={i % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-700'}>
+    <Table.Root>
+      <Table.Body>
+        {#each rows as row}
+          <Table.Row>
             {#each row as cell}
-              <td class="border border-gray-200 dark:border-gray-600 px-3 py-1 whitespace-nowrap">
-                {cell}
-              </td>
+              <Table.Cell class="whitespace-nowrap border">{cell}</Table.Cell>
             {/each}
-          </tr>
+          </Table.Row>
         {/each}
-      </tbody>
-    </table>
+      </Table.Body>
+    </Table.Root>
   </div>
 {/if}

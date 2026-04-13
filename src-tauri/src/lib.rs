@@ -9,13 +9,11 @@ fn get_sheets(path: &str) -> Result<Vec<String>, String> {
 #[tauri::command]
 fn get_sheet_rows(path: &str, sheet: &str) -> Result<Vec<Vec<String>>, String> {
     let mut workbook = open_workbook_auto(path).map_err(|e| e.to_string())?;
-    let range = workbook
-        .worksheet_range(sheet)
-        .map_err(|e| e.to_string())?;
+    let range = workbook.worksheet_range(sheet).map_err(|e| e.to_string())?;
 
     let rows = range
         .rows()
-        .take(5)
+        .take(10)
         .map(|row| {
             row.iter()
                 .map(|cell| match cell {

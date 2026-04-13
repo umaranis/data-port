@@ -18,7 +18,10 @@
 
   async function handleSelectSheet(sheet: string) {
     selectedSheet = sheet;
-    rows = await invoke<string[][]>("get_sheet_rows", { path: filePath, sheet });
+    rows = await invoke<string[][]>("get_sheet_rows", {
+      path: filePath,
+      sheet,
+    });
   }
 </script>
 
@@ -26,7 +29,12 @@
   <h1 class="text-2xl font-bold mb-6">Data Port</h1>
   <FileSelector onload={handleLoad} />
   {#if filePath && sheets.length > 0}
-    <Workbook {filePath} {sheets} {selectedSheet} onselect={handleSelectSheet} />
+    <Workbook
+      {filePath}
+      {sheets}
+      {selectedSheet}
+      onselect={handleSelectSheet}
+    />
     <Sheet {rows} />
   {/if}
 </main>
