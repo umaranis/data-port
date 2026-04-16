@@ -11,8 +11,15 @@
 {#if rows.length > 0}
   <div class="mt-4 overflow-x-auto">
     <Table.Root>
+      <Table.Header>
+        <Table.Row>
+          {#each rows[0] as cell}
+            <Table.Head class="whitespace-nowrap border">{cell}</Table.Head>
+          {/each}
+        </Table.Row>
+      </Table.Header>
       <Table.Body>
-        {#each rows as row}
+        {#each rows.slice(1) as row}
           <Table.Row>
             {#each row as cell}
               <Table.Cell class="whitespace-nowrap border">{cell}</Table.Cell>
