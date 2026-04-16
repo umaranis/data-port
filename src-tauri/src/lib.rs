@@ -35,21 +35,24 @@ fn get_sheet_rows_paged(
     let mut workbook = open_workbook_auto(path).map_err(|e| e.to_string())?;
     let range = workbook.worksheet_range(sheet).map_err(|e| e.to_string())?;
 
+    // Total data rows excluding the header row
+    let total_rows = range.height().saturating_sub(1);
+
     let mut all_rows = range.rows();
 
-    // First row is the header
+    // First row is the header — read it without touching data rows
     let header: Vec<String> = all_rows
         .next()
         .map(|r| r.iter().map(cell_to_string).collect())
         .unwrap_or_default();
 
-    let data_rows: Vec<Vec<String>> = all_rows
+    // Skip directly to the requested page; only convert the rows we need
+    let start = page * page_size;
+    let page_data: Vec<Vec<String>> = all_rows
+        .skip(start)
+        .take(page_size)
         .map(|row| row.iter().map(cell_to_string).collect())
         .collect();
-
-    let total_rows = data_rows.len();
-    let start = page * page_size;
-    let page_data: Vec<Vec<String>> = data_rows.into_iter().skip(start).take(page_size).collect();
 
     let mut rows = Vec::with_capacity(page_data.len() + 1);
     rows.push(header);
