@@ -12,6 +12,13 @@
 {#if totalRows > 0}
   <div class="flex items-center gap-3 mt-3 mb-6">
     <button
+      onclick={() => onpage(0)}
+      disabled={currentPage === 0}
+      class="px-3 py-1 border rounded disabled:opacity-40"
+    >
+      &laquo;
+    </button>
+    <button
       onclick={() => onpage(currentPage - 1)}
       disabled={currentPage === 0}
       class="px-3 py-1 border rounded disabled:opacity-40"
@@ -27,6 +34,13 @@
       class="px-3 py-1 border rounded disabled:opacity-40"
     >
       Next &rarr;
+    </button>
+    <button
+      onclick={() => onpage(totalPages - 1)}
+      disabled={currentPage >= totalPages - 1}
+      class="px-3 py-1 border rounded disabled:opacity-40"
+    >
+      &raquo;
     </button>
     <span class="text-sm text-gray-500">({totalRows} rows total)</span>
   </div>
