@@ -61,12 +61,61 @@ fn get_sheet_rows_paged(
     Ok(PagedRows { rows, total_rows })
 }
 
+#[tauri::command]
+fn get_sheet_rows_paged_filtered(
+    path: &str,
+    sheet: &str,
+    page: usize,
+    page_size: usize,
+    skip_rows: Vec<usize>,
+) -> Result<PagedRows, String> {
+    let mut workbook = open_workbook_auto(path).map_err(|e| e.to_string())?;
+    let range = workbook.worksheet_range(sheet).map_err(|e| e.to_string())?;
+
+    let mut all_rows = range.rows();
+
+    let header: Vec<String> = all_rows
+        .next()
+        .map(|r| r.iter().map(cell_to_string).collect())
+        .unwrap_or_default();
+
+    let skip_set: std::collections::HashSet<usize> = skip_rows.into_iter().collect();
+
+    // Compute total visible rows without iterating: subtract only in-bounds skips
+    let data_row_count = range.height().saturating_sub(1);
+    let skipped_in_bounds = skip_set
+        .iter()
+        .filter(|&&r| r >= 1 && r <= data_row_count)
+        .count();
+    let total_rows = data_row_count - skipped_in_bounds;
+
+    // Stream filtered rows; only convert cells for the requested page
+    let start = page * page_size;
+    let page_data: Vec<Vec<String>> = all_rows
+        .enumerate()
+        .filter(|(i, _)| !skip_set.contains(&(i + 1)))
+        .skip(start)
+        .take(page_size)
+        .map(|(_, row)| row.iter().map(cell_to_string).collect())
+        .collect();
+
+    let mut rows = Vec::with_capacity(page_data.len() + 1);
+    rows.push(header);
+    rows.extend(page_data);
+
+    Ok(PagedRows { rows, total_rows })
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
-        .invoke_handler(tauri::generate_handler![get_sheets, get_sheet_rows_paged])
+        .invoke_handler(tauri::generate_handler![
+            get_sheets,
+            get_sheet_rows_paged,
+            get_sheet_rows_paged_filtered
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
