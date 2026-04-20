@@ -88,7 +88,10 @@
 
 {#if rows.length > 0}
   <div class="mt-4 flex items-center gap-2 flex-wrap">
-    <label for="header-row" class="text-sm whitespace-nowrap">Header row:</label>
+    <label for="header-row" class="text-sm whitespace-nowrap">
+      Header row:
+      <span title="Rows before the header row are skipped" class="cursor-help text-gray-400 hover:text-gray-600">ⓘ</span>
+    </label>
     <input
       id="header-row"
       type="number"
