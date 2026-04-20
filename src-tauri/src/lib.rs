@@ -127,11 +127,22 @@ fn get_sheet_rows_paged_filtered(
     Ok(PagedRows { rows, total_rows })
 }
 
+fn full_error(e: &dyn std::error::Error) -> String {
+    let mut msg = e.to_string();
+    let mut src = e.source();
+    while let Some(s) = src {
+        msg.push_str(": ");
+        msg.push_str(&s.to_string());
+        src = s.source();
+    }
+    msg
+}
+
 #[tauri::command]
 async fn pg_connect(conn_string: String) -> Result<(), String> {
     let (client, connection) = tokio_postgres::connect(&conn_string, NoTls)
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| full_error(&e))?;
     tokio::spawn(async move {
         let _ = connection.await;
     });
