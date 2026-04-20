@@ -2,6 +2,7 @@
   import { invoke } from "@tauri-apps/api/core";
   import * as Table from "$lib/components/ui/table";
   import Paging from "$lib/Paging.svelte";
+  import SheetFilters from "$lib/SheetFilters.svelte";
   import { type ColumnMeta } from "$lib/pgTypes";
   import { untrack } from "svelte";
   import ColumnTypeHeader from "./ColumnTypeHeader.svelte";
@@ -27,11 +28,6 @@
   let appliedSkipRows = $state<number[]>([]);
 
   let columnMeta = $state<ColumnMeta[]>([]);
-
-  let hasChanges = $derived(
-    headerRowInput !== appliedHeaderRow + 1 ||
-    skipRowsInput !== appliedSkipRowsInput
-  );
 
   let totalPages = $derived(Math.max(1, Math.ceil(totalRows / PAGE_SIZE)));
 
@@ -107,46 +103,14 @@
 </script>
 
 {#if rows.length > 0}
-  <div class="mt-4 flex items-center gap-2 flex-wrap">
-    <label for="header-row" class="text-sm whitespace-nowrap">
-      Header row:
-      <span
-        title="Rows before the header row are skipped"
-        class="cursor-help text-gray-400 hover:text-gray-600">ⓘ</span
-      >
-    </label>
-    <input
-      id="header-row"
-      type="number"
-      min="1"
-      bind:value={headerRowInput}
-      onkeydown={(e) => e.key === "Enter" && applyFilters()}
-      class="border rounded px-2 py-1 text-sm w-16"
-    />
-    <label for="skip-rows" class="text-sm whitespace-nowrap ml-2"
-      >Skip rows:</label
-    >
-    <input
-      id="skip-rows"
-      type="text"
-      bind:value={skipRowsInput}
-      onkeydown={(e) => e.key === "Enter" && applyFilters()}
-      placeholder="e.g. 1,3,5-10"
-      class="border rounded px-2 py-1 text-sm w-48"
-    />
-    <button
-      onclick={applyFilters}
-      disabled={!hasChanges}
-      class="border rounded px-3 py-1 text-sm hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
-    >
-      Apply
-    </button>
-    {#if appliedSkipRows.length > 0}
-      <span class="text-sm text-gray-500">
-        {appliedSkipRows.length} row{appliedSkipRows.length !== 1 ? "s" : ""} hidden
-      </span>
-    {/if}
-  </div>
+  <SheetFilters
+    bind:headerRowInput
+    bind:skipRowsInput
+    {appliedHeaderRow}
+    {appliedSkipRowsInput}
+    hiddenRowCount={appliedSkipRows.length}
+    onapply={applyFilters}
+  />
   <div class="mt-2 overflow-x-auto">
     <Table.Root>
       <Table.Header>
