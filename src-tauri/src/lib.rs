@@ -57,13 +57,18 @@ fn get_sheet_rows_paged(
     sheet: &str,
     page: usize,
     page_size: usize,
+    header_row: usize,
     cache: tauri::State<SheetCache>,
 ) -> Result<PagedRows, String> {
     let range = cache.get_range(path, sheet)?;
 
-    let total_rows = range.height().saturating_sub(1);
+    let total_rows = range.height().saturating_sub(header_row + 1);
 
     let mut all_rows = range.rows();
+
+    for _ in 0..header_row {
+        all_rows.next();
+    }
 
     let header: Vec<String> = all_rows
         .next()
@@ -90,12 +95,17 @@ fn get_sheet_rows_paged_filtered(
     sheet: &str,
     page: usize,
     page_size: usize,
+    header_row: usize,
     skip_rows: Vec<usize>,
     cache: tauri::State<SheetCache>,
 ) -> Result<PagedRows, String> {
     let range = cache.get_range(path, sheet)?;
 
     let mut all_rows = range.rows();
+
+    for _ in 0..header_row {
+        all_rows.next();
+    }
 
     let header: Vec<String> = all_rows
         .next()
@@ -104,7 +114,7 @@ fn get_sheet_rows_paged_filtered(
 
     let skip_set: std::collections::HashSet<usize> = skip_rows.into_iter().collect();
 
-    let data_row_count = range.height().saturating_sub(1);
+    let data_row_count = range.height().saturating_sub(header_row + 1);
     let skipped_in_bounds = skip_set
         .iter()
         .filter(|&&r| r >= 1 && r <= data_row_count)

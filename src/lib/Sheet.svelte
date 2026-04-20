@@ -17,6 +17,9 @@
   let currentPage = $state(0);
   let totalRows = $state(0);
 
+  let headerRowInput = $state(1);           // 1-indexed, shown in UI
+  let appliedHeaderRow = $state(0);         // 0-indexed, sent to backend
+
   let skipRowsInput = $state("");
   let appliedSkipRows = $state<number[]>([]);
 
@@ -38,7 +41,8 @@
     return Array.from(result);
   }
 
-  function applySkipRows() {
+  function applyFilters() {
+    appliedHeaderRow = Math.max(0, headerRowInput - 1);
     appliedSkipRows = parseSkipRows(skipRowsInput);
     currentPage = 0;
     untrack(() => loadPage(0));
@@ -53,6 +57,7 @@
         sheet,
         page,
         pageSize: PAGE_SIZE,
+        headerRow: appliedHeaderRow,
         skipRows: appliedSkipRows,
       },
     );
@@ -71,6 +76,8 @@
     currentPage = 0;
     rows = [];
     totalRows = 0;
+    headerRowInput = 1;
+    appliedHeaderRow = 0;
     skipRowsInput = "";
     appliedSkipRows = [];
     untrack(() => {
@@ -80,18 +87,27 @@
 </script>
 
 {#if rows.length > 0}
-  <div class="mt-4 flex items-center gap-2">
-    <label for="skip-rows" class="text-sm whitespace-nowrap">Skip rows:</label>
+  <div class="mt-4 flex items-center gap-2 flex-wrap">
+    <label for="header-row" class="text-sm whitespace-nowrap">Header row:</label>
+    <input
+      id="header-row"
+      type="number"
+      min="1"
+      bind:value={headerRowInput}
+      onkeydown={(e) => e.key === "Enter" && applyFilters()}
+      class="border rounded px-2 py-1 text-sm w-16"
+    />
+    <label for="skip-rows" class="text-sm whitespace-nowrap ml-2">Skip rows:</label>
     <input
       id="skip-rows"
       type="text"
       bind:value={skipRowsInput}
-      onkeydown={(e) => e.key === "Enter" && applySkipRows()}
+      onkeydown={(e) => e.key === "Enter" && applyFilters()}
       placeholder="e.g. 1,3,5-10"
       class="border rounded px-2 py-1 text-sm w-48"
     />
     <button
-      onclick={applySkipRows}
+      onclick={applyFilters}
       class="border rounded px-3 py-1 text-sm hover:bg-gray-100"
     >
       Apply
