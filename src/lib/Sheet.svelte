@@ -23,9 +23,15 @@
   let appliedHeaderRow = $state(0);
 
   let skipRowsInput = $state("");
+  let appliedSkipRowsInput = $state("");
   let appliedSkipRows = $state<number[]>([]);
 
   let columnMeta = $state<ColumnMeta[]>([]);
+
+  let hasChanges = $derived(
+    headerRowInput !== appliedHeaderRow + 1 ||
+    skipRowsInput !== appliedSkipRowsInput
+  );
 
   let totalPages = $derived(Math.max(1, Math.ceil(totalRows / PAGE_SIZE)));
 
@@ -51,6 +57,7 @@
 
   function applyFilters() {
     appliedHeaderRow = Math.max(0, headerRowInput - 1);
+    appliedSkipRowsInput = skipRowsInput;
     appliedSkipRows = parseSkipRows(skipRowsInput);
     currentPage = 0;
     untrack(() => loadPage(0));
@@ -90,6 +97,7 @@
     headerRowInput = 1;
     appliedHeaderRow = 0;
     skipRowsInput = "";
+    appliedSkipRowsInput = "";
     appliedSkipRows = [];
     columnMeta = [];
     untrack(() => {
@@ -128,7 +136,8 @@
     />
     <button
       onclick={applyFilters}
-      class="border rounded px-3 py-1 text-sm hover:bg-gray-100"
+      disabled={!hasChanges}
+      class="border rounded px-3 py-1 text-sm hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
     >
       Apply
     </button>
