@@ -129,6 +129,11 @@ fn get_sheet_rows_paged_filtered(
     Ok(PagedRows { rows, total_rows })
 }
 
+#[tauri::command]
+fn clear_cache(cache: tauri::State<SheetCache>) {
+    cache.0.lock().unwrap().clear();
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -138,7 +143,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             get_sheets,
             get_sheet_rows_paged,
-            get_sheet_rows_paged_filtered
+            get_sheet_rows_paged_filtered,
+            clear_cache
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
