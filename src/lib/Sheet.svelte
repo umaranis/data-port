@@ -2,52 +2,11 @@
   import { invoke } from "@tauri-apps/api/core";
   import * as Table from "$lib/components/ui/table";
   import Paging from "$lib/Paging.svelte";
+  import ColumnHeader from "$lib/ColumnHeader.svelte";
+  import { type ColumnMeta } from "$lib/pgTypes";
   import { untrack } from "svelte";
 
   const PAGE_SIZE = 50;
-
-  const PG_TYPES = [
-    "text",
-    "varchar",
-    "integer",
-    "bigint",
-    "numeric",
-    "boolean",
-    "date",
-    "timestamp",
-    "timestamptz",
-    "double precision",
-    "jsonb",
-    "uuid",
-  ] as const;
-
-  type PgType = (typeof PG_TYPES)[number];
-
-  // Which modifiers each type accepts
-  const TYPE_MODIFIERS: Record<
-    PgType,
-    { length?: true; precision?: true; scale?: true }
-  > = {
-    text: {},
-    varchar: { length: true },
-    integer: {},
-    bigint: {},
-    numeric: { precision: true, scale: true },
-    boolean: {},
-    date: {},
-    timestamp: { precision: true },
-    timestamptz: { precision: true },
-    "double precision": {},
-    jsonb: {},
-    uuid: {},
-  };
-
-  type ColumnMeta = {
-    type: PgType;
-    length?: number;
-    precision?: number;
-    scale?: number;
-  };
 
   type Props = {
     filePath: string | null;
@@ -184,46 +143,8 @@
       <Table.Header>
         <Table.Row>
           {#each rows[0] as cell, i}
-            {@const modifiers = TYPE_MODIFIERS[columnMeta[i]?.type ?? "text"]}
             <Table.Head class="border align-top">
-              <div class="flex flex-col gap-1 py-1 min-w-[110px]">
-                <span class="whitespace-nowrap">{cell}</span>
-                <select
-                  bind:value={columnMeta[i].type}
-                  class="text-xs font-normal border rounded px-1 py-0.5 bg-white dark:bg-gray-800 dark:border-gray-600 cursor-pointer"
-                >
-                  {#each PG_TYPES as type}
-                    <option value={type}>{type}</option>
-                  {/each}
-                </select>
-                {#if modifiers.length}
-                  <input
-                    type="number"
-                    min="1"
-                    bind:value={columnMeta[i].length}
-                    placeholder="length"
-                    class="text-xs font-normal border rounded px-1 py-0.5 w-full dark:bg-gray-800 dark:border-gray-600"
-                  />
-                {/if}
-                {#if modifiers.precision}
-                  <input
-                    type="number"
-                    min="1"
-                    bind:value={columnMeta[i].precision}
-                    placeholder="precision"
-                    class="text-xs font-normal border rounded px-1 py-0.5 w-full dark:bg-gray-800 dark:border-gray-600"
-                  />
-                {/if}
-                {#if modifiers.scale}
-                  <input
-                    type="number"
-                    min="0"
-                    bind:value={columnMeta[i].scale}
-                    placeholder="scale"
-                    class="text-xs font-normal border rounded px-1 py-0.5 w-full dark:bg-gray-800 dark:border-gray-600"
-                  />
-                {/if}
-              </div>
+              <ColumnHeader {cell} meta={columnMeta[i]} />
             </Table.Head>
           {/each}
         </Table.Row>
