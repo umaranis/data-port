@@ -2,9 +2,9 @@
   import { invoke } from "@tauri-apps/api/core";
   import * as Table from "$lib/components/ui/table";
   import Paging from "$lib/Paging.svelte";
-  import ColumnHeader from "$lib/ColumnHeader.svelte";
   import { type ColumnMeta } from "$lib/pgTypes";
   import { untrack } from "svelte";
+  import ColumnTypeHeader from "./ColumnTypeHeader.svelte";
 
   const PAGE_SIZE = 50;
 
@@ -142,10 +142,18 @@
     <Table.Root>
       <Table.Header>
         <Table.Row>
-          {#each rows[0] as cell, i}
-            <Table.Head class="border align-top">
-              <ColumnHeader {cell} meta={columnMeta[i]} />
+          {#each rows[0] as _, i}
+            <Table.Head class="border align-top bg-gray-300 dark:bg-gray-700">
+              <ColumnTypeHeader meta={columnMeta[i]} />
             </Table.Head>
+          {/each}
+        </Table.Row>
+        <Table.Row>
+          {#each rows[0] as cell}
+            <Table.Head
+              class="border whitespace-nowrap bg-blue-300 dark:bg-blue-700 font-semibold"
+              >{cell}</Table.Head
+            >
           {/each}
         </Table.Row>
       </Table.Header>

@@ -1,14 +1,13 @@
 <script lang="ts">
   import { PG_TYPES, TYPE_MODIFIERS, type ColumnMeta } from "$lib/pgTypes";
 
-  type Props = { cell: string; meta: ColumnMeta };
-  let { cell, meta }: Props = $props();
+  type Props = { meta: ColumnMeta };
+  let { meta }: Props = $props();
 
   let modifiers = $derived(TYPE_MODIFIERS[meta.type]);
 </script>
 
-<div class="flex flex-col gap-1 py-1 min-w-[110px]">
-  <span class="whitespace-nowrap">{cell}</span>
+<div class="flex flex-col gap-1 py-1 min-w-27.5">
   <select
     bind:value={meta.type}
     class="text-xs font-normal border rounded px-1 py-0.5 bg-white dark:bg-gray-800 dark:border-gray-600 cursor-pointer"
