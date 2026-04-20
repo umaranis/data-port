@@ -1,6 +1,9 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
 
+  type Props = { onconnect?: (connString: string) => void };
+  let { onconnect }: Props = $props();
+
   let dialog = $state<HTMLDialogElement | null>(null);
 
   let host = $state("localhost");
@@ -35,10 +38,16 @@
     try {
       await invoke("pg_connect", { connString });
       status = { ok: true };
+      onconnect?.(connString);
     } catch (e) {
       status = { ok: false, error: String(e) };
     } finally {
       connecting = false;
+      if (status?.ok) {
+        setTimeout(() => {
+          close();
+        }, 1000);
+      }
     }
   }
 </script>
