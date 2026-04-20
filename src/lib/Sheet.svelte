@@ -4,6 +4,7 @@
   import Paging from "$lib/Paging.svelte";
   import SheetFilters from "$lib/SheetFilters.svelte";
   import { type ColumnMeta } from "$lib/pgTypes";
+  import { SkipRows } from "$lib/SkipRows.svelte";
   import { untrack } from "svelte";
   import ColumnTypeHeader from "./ColumnTypeHeader.svelte";
 
@@ -23,9 +24,7 @@
   let headerRowInput = $state(1);
   let appliedHeaderRow = $state(0);
 
-  let skipRowsInput = $state("");
-  let appliedSkipRowsInput = $state("");
-  let appliedSkipRows = $state<number[]>([]);
+  const skipRows = new SkipRows();
 
   let columnMeta = $state<ColumnMeta[]>([]);
 
@@ -35,26 +34,9 @@
     return Array.from({ length: count }, () => ({ type: "text" }));
   }
 
-  function parseSkipRows(input: string): number[] {
-    const result = new Set<number>();
-    for (const part of input.split(",")) {
-      const trimmed = part.trim();
-      const range = trimmed.match(/^(\d+)\s*-\s*(\d+)$/);
-      if (range) {
-        const start = parseInt(range[1]);
-        const end = parseInt(range[2]);
-        for (let i = start; i <= end; i++) result.add(i);
-      } else if (/^\d+$/.test(trimmed)) {
-        result.add(parseInt(trimmed));
-      }
-    }
-    return Array.from(result);
-  }
-
   function applyFilters() {
     appliedHeaderRow = Math.max(0, headerRowInput - 1);
-    appliedSkipRowsInput = skipRowsInput;
-    appliedSkipRows = parseSkipRows(skipRowsInput);
+    skipRows.apply();
     currentPage = 0;
     untrack(() => loadPage(0));
   }
@@ -69,7 +51,7 @@
         page,
         pageSize: PAGE_SIZE,
         headerRow: appliedHeaderRow,
-        skipRows: appliedSkipRows,
+        skipRows: skipRows.applied,
       },
     );
     rows = result.rows;
@@ -92,9 +74,7 @@
     totalRows = 0;
     headerRowInput = 1;
     appliedHeaderRow = 0;
-    skipRowsInput = "";
-    appliedSkipRowsInput = "";
-    appliedSkipRows = [];
+    skipRows.reset();
     columnMeta = [];
     untrack(() => {
       loadPage(0);
@@ -104,11 +84,11 @@
 
 {#if rows.length > 0}
   <SheetFilters
+    {filePath}
+    {sheet}
     bind:headerRowInput
-    bind:skipRowsInput
     {appliedHeaderRow}
-    {appliedSkipRowsInput}
-    hiddenRowCount={appliedSkipRows.length}
+    {skipRows}
     onapply={applyFilters}
   />
   <div class="mt-2 overflow-x-auto">

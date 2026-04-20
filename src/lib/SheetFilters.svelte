@@ -1,26 +1,32 @@
 <script lang="ts">
+  import { type SkipRows } from "$lib/SkipRows.svelte";
+
   type Props = {
+    filePath: string | null;
+    sheet: string | null;
     headerRowInput: number;
-    skipRowsInput: string;
-    appliedHeaderRow: number;       // 0-indexed — used to detect changes
-    appliedSkipRowsInput: string;   // raw string last applied
-    hiddenRowCount: number;
+    appliedHeaderRow: number;
+    skipRows: SkipRows;
     onapply: () => void;
   };
 
   let {
+    filePath,
+    sheet,
     headerRowInput = $bindable(),
-    skipRowsInput = $bindable(),
     appliedHeaderRow,
-    appliedSkipRowsInput,
-    hiddenRowCount,
+    skipRows,
     onapply,
   }: Props = $props();
 
   let hasChanges = $derived(
-    headerRowInput !== appliedHeaderRow + 1 ||
-    skipRowsInput !== appliedSkipRowsInput
+    headerRowInput !== appliedHeaderRow + 1 || skipRows.hasChanges
   );
+
+  async function findBlankRows() {
+    if (!filePath || !sheet) return;
+    await skipRows.findBlank(filePath, sheet, appliedHeaderRow);
+  }
 </script>
 
 <div class="mt-4 flex items-center gap-2 flex-wrap">
@@ -43,11 +49,17 @@
   <input
     id="skip-rows"
     type="text"
-    bind:value={skipRowsInput}
+    bind:value={skipRows.input}
     onkeydown={(e) => e.key === "Enter" && hasChanges && onapply()}
     placeholder="e.g. 1,3,5-10"
     class="border rounded px-2 py-1 text-sm w-48"
   />
+  <button
+    onclick={findBlankRows}
+    class="border rounded px-3 py-1 text-sm hover:bg-gray-100"
+  >
+    Find blank rows
+  </button>
   <button
     onclick={onapply}
     disabled={!hasChanges}
@@ -55,9 +67,9 @@
   >
     Apply
   </button>
-  {#if hiddenRowCount > 0}
+  {#if skipRows.applied.length > 0}
     <span class="text-sm text-gray-500">
-      {hiddenRowCount} row{hiddenRowCount !== 1 ? "s" : ""} hidden
+      {skipRows.applied.length} row{skipRows.applied.length !== 1 ? "s" : ""} hidden
     </span>
   {/if}
 </div>

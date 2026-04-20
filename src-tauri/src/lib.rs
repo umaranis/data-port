@@ -149,6 +149,29 @@ fn get_sheet_rows_paged_filtered(
     Ok(PagedRows { rows, total_rows })
 }
 
+#[tauri::command]
+fn get_blank_rows(
+    path: &str,
+    sheet: &str,
+    header_row: usize,
+    cache: tauri::State<SheetCache>,
+) -> Result<Vec<usize>, String> {
+    let range = cache.get_range(path, sheet)?;
+    let mut all_rows = range.rows();
+
+    for _ in 0..=header_row {
+        all_rows.next();
+    }
+
+    let blank: Vec<usize> = all_rows
+        .enumerate()
+        .filter(|(_, row)| row.iter().all(|cell| matches!(cell, Data::Empty)))
+        .map(|(i, _)| i + 1)
+        .collect();
+
+    Ok(blank)
+}
+
 fn full_error(e: &dyn std::error::Error) -> String {
     let mut msg = e.to_string();
     let mut src = e.source();
@@ -187,6 +210,7 @@ pub fn run() {
             get_sheets,
             get_sheet_rows_paged,
             get_sheet_rows_paged_filtered,
+            get_blank_rows,
             clear_cache,
             pg_connect
         ])
