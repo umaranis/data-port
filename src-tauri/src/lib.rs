@@ -16,6 +16,18 @@ fn cell_to_string(cell: &Data) -> String {
     }
 }
 
+/**
+ * A simple in-memory cache for sheet data, keyed by (file path, sheet name).
+ * Stores the entire sheet range in memory for quick access.
+ *
+ * This cache is required because calamine does not support streaming access to sheet data, and reading large sheets repeatedly from disk would be inefficient.
+ *
+ * The cache is thread-safe using a Mutex, and the range data is shared using Arc to avoid unnecessary cloning.
+ *
+ * Note: This cache does not implement any eviction policy.
+ * But on file selection from UI, clear_cache is called, so it should not grow indefinitely in typical usage.
+ * There is a clear_cache command to manually clear it through the UI as well.
+ */
 struct SheetCache(Mutex<HashMap<(String, String), Arc<Range<Data>>>>);
 
 impl SheetCache {
