@@ -1,6 +1,7 @@
 use calamine::{open_workbook_auto, Data, Range, Reader};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
+use tokio_postgres::NoTls;
 
 fn cell_to_string(cell: &Data) -> String {
     match cell {
@@ -33,10 +34,7 @@ impl SheetCache {
         let mut workbook = open_workbook_auto(path).map_err(|e| e.to_string())?;
         let range = workbook.worksheet_range(sheet).map_err(|e| e.to_string())?;
         let arc_range = Arc::new(range);
-        self.0
-            .lock()
-            .unwrap()
-            .insert(key, Arc::clone(&arc_range));
+        self.0.lock().unwrap().insert(key, Arc::clone(&arc_range));
         Ok(arc_range)
     }
 }
@@ -130,6 +128,18 @@ fn get_sheet_rows_paged_filtered(
 }
 
 #[tauri::command]
+async fn pg_connect(conn_string: String) -> Result<(), String> {
+    let (client, connection) = tokio_postgres::connect(&conn_string, NoTls)
+        .await
+        .map_err(|e| e.to_string())?;
+    tokio::spawn(async move {
+        let _ = connection.await;
+    });
+    drop(client);
+    Ok(())
+}
+
+#[tauri::command]
 fn clear_cache(cache: tauri::State<SheetCache>) {
     cache.0.lock().unwrap().clear();
 }
@@ -144,7 +154,8 @@ pub fn run() {
             get_sheets,
             get_sheet_rows_paged,
             get_sheet_rows_paged_filtered,
-            clear_cache
+            clear_cache,
+            pg_connect
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -1,6 +1,7 @@
 <script lang="ts">
   import FileSelector from "$lib/FileSelector.svelte";
   import ClearCache from "$lib/ClearCache.svelte";
+  import PgConnect from "$lib/PgConnect.svelte";
   import Workbook from "$lib/Workbook.svelte";
 
   let filePath = $state<string | null>(null);
@@ -11,6 +12,9 @@
   <div class="flex flex-row items-center gap-3">
     <FileSelector onload={(fp) => (filePath = fp)} />
     <ClearCache />
+  </div>
+  <div class="mt-3">
+    <PgConnect />
   </div>
   <Workbook {filePath} />
 </main>

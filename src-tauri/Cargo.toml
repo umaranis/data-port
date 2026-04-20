@@ -24,4 +24,6 @@ tauri-plugin-dialog = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 calamine = "0.26"
+tokio-postgres = "0.7"
+tokio = { version = "1", features = ["rt"] }
 
