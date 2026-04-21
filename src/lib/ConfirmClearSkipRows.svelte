@@ -3,11 +3,10 @@
 
   type Props = {
     open: boolean;
-    count: number;
     onconfirm: () => void;
   };
 
-  let { open = $bindable(), count, onconfirm }: Props = $props();
+  let { open = $bindable(), onconfirm }: Props = $props();
 </script>
 
 <AlertDialog.Root bind:open>
@@ -15,8 +14,8 @@
     <AlertDialog.Header>
       <AlertDialog.Title>Clear skipped rows?</AlertDialog.Title>
       <AlertDialog.Description>
-        Changing the header row resets row numbering. The {count} currently skipped
-        row{count !== 1 ? "s" : ""} will be cleared.
+        Changing the header row resets row numbering. Currently skipped row(s)
+        will be cleared.
       </AlertDialog.Description>
     </AlertDialog.Header>
     <AlertDialog.Footer>

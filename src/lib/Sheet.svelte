@@ -40,7 +40,10 @@
 
   function applyFilters() {
     const newHeaderRow = Math.max(0, headerRowInput - 1);
-    if (newHeaderRow !== appliedHeaderRow && skipRows.applied.length > 0) {
+    if (
+      newHeaderRow !== appliedHeaderRow &&
+      (skipRows.applied.length > 0 || skipRows.input.length > 0)
+    ) {
       pendingHeaderRow = newHeaderRow;
       confirmDialogOpen = true;
       return;
@@ -144,6 +147,5 @@
 
 <ConfirmClearSkipRows
   bind:open={confirmDialogOpen}
-  count={skipRows.applied.length}
   onconfirm={() => commitFilters(pendingHeaderRow)}
 />
