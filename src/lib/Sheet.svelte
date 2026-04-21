@@ -16,29 +16,16 @@
     filePath: string | null;
     sheet: string | null;
     sheetAction: SheetAction;
-    connString: string | null;
+    dbTables: string[];
   };
 
-  let { filePath, sheet, sheetAction, connString }: Props = $props();
+  let { filePath, sheet, sheetAction, dbTables }: Props = $props();
 
   let tableName = $state("");
-  let dbTables = $state<string[]>([]);
   let selectedTable = $state("");
-  let tablesError = $state<string | null>(null);
 
   $effect(() => {
-    if (sheetAction === "append" && connString) {
-      invoke<string[]>("pg_get_tables", { connString })
-        .then((tables) => {
-          dbTables = tables;
-          selectedTable = tables[0] ?? "";
-          tablesError = null;
-        })
-        .catch((e) => {
-          tablesError = String(e);
-          dbTables = [];
-        });
-    }
+    selectedTable = dbTables[0] ?? "";
   });
 
   let rows = $state<string[][]>([]);
@@ -134,7 +121,9 @@
   <div class="m-2 flex items-center justify-between gap-4">
     {#if sheetAction === "create"}
       <div class="flex items-center gap-2">
-        <label for="table-name" class="text-sm whitespace-nowrap">Table name:</label>
+        <label for="table-name" class="text-sm whitespace-nowrap"
+          >Table name:</label
+        >
         <input
           id="table-name"
           type="text"
@@ -144,10 +133,10 @@
       </div>
     {:else if sheetAction === "append"}
       <div class="flex items-center gap-2">
-        <label for="append-table" class="text-sm whitespace-nowrap">Append to table:</label>
-        {#if tablesError}
-          <span class="text-sm text-red-600">{tablesError}</span>
-        {:else if dbTables.length === 0}
+        <label for="append-table" class="text-sm whitespace-nowrap"
+          >Append to table:</label
+        >
+        {#if dbTables.length === 0}
           <span class="text-sm text-gray-400">No tables found</span>
         {:else}
           <select

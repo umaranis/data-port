@@ -14,10 +14,10 @@
 
   type Props = {
     filePath: string | null;
-    connString: string | null;
+    dbTables: string[];
   };
 
-  let { filePath, connString }: Props = $props();
+  let { filePath, dbTables }: Props = $props();
 
   let sheets = $state.raw<string[]>([]);
   let selectedSheet = $state<string | null>(null);
@@ -76,7 +76,7 @@
       </Tabs.List>
     </Tabs.Root>
     <div class="mt-0 border rounded-lg">
-      <Sheet {filePath} sheet={selectedSheet} sheetAction={sheetActions[selectedSheet ?? ""] ?? "create"} {connString} />
+      <Sheet {filePath} sheet={selectedSheet} sheetAction={sheetActions[selectedSheet ?? ""] ?? "create"} {dbTables} />
     </div>
   </div>
 {/if}

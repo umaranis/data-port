@@ -7,10 +7,16 @@
 
   let filePath = $state<string | null>(null);
   let pgConnString = $state<string | null>(null);
+  let dbTables = $state<string[]>([]);
 
   async function onFileLoad(fp: string) {
     filePath = fp;
     await invoke("clear_cache");
+  }
+
+  async function onConnect(cs: string) {
+    pgConnString = cs;
+    dbTables = await invoke<string[]>("pg_get_tables", { connString: cs });
   }
 </script>
 
@@ -21,7 +27,7 @@
     <ClearCache />
   </div>
   <div class="mt-3 flex flex-row items-center gap-3">
-    <PgConnect onconnect={(cs) => (pgConnString = cs)} />
+    <PgConnect onconnect={onConnect} />
     {#if pgConnString}
       <code
         class="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded px-1.5 py-0.5 break-all"
@@ -29,5 +35,5 @@
       >
     {/if}
   </div>
-  <Workbook {filePath} connString={pgConnString} />
+  <Workbook {filePath} {dbTables} />
 </main>
