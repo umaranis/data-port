@@ -1,5 +1,6 @@
 <script lang="ts">
   import { open } from "@tauri-apps/plugin-dialog";
+  import { Button } from "$lib/components/ui/button";
 
   type Props = {
     onload: (filePath: string) => void;
@@ -25,12 +26,7 @@
 </script>
 
 <div class="flex flex-row items-center gap-3">
-  <button
-    onclick={selectFile}
-    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-colors cursor-pointer"
-  >
-    Select Excel File
-  </button>
+  <Button onclick={selectFile}>Select Excel File</Button>
 
   {#if filePath}
     <p class="text-sm text-gray-500 dark:text-gray-400 break-all max-w-lg">

@@ -1,5 +1,6 @@
 <script lang="ts">
   import { type SkipRows } from "$lib/SkipRows.svelte";
+  import { Button } from "$lib/components/ui/button";
 
   type Props = {
     filePath: string | null;
@@ -56,19 +57,12 @@
     placeholder="e.g. 1,3,5-10"
     class="border rounded px-2 py-1 text-sm w-48"
   />
-  <button
-    onclick={findBlankRows}
-    class="border rounded px-3 py-1 text-sm hover:bg-gray-100"
-  >
+  <Button variant="outline" size="sm" onclick={findBlankRows}>
     Find blank rows
-  </button>
-  <button
-    onclick={onapply}
-    disabled={!hasChanges}
-    class="border rounded px-3 py-1 text-sm hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
-  >
+  </Button>
+  <Button variant="outline" size="sm" onclick={onapply} disabled={!hasChanges}>
     Apply
-  </button>
+  </Button>
   {#if skipRows.applied.length > 0}
     <span class="text-sm text-gray-500">
       {skipRows.applied.length} row{skipRows.applied.length !== 1 ? "s" : ""} hidden

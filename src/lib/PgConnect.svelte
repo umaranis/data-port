@@ -1,5 +1,6 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
+  import { Button } from "$lib/components/ui/button";
 
   type Props = { onconnect?: (connString: string) => void };
   let { onconnect }: Props = $props();
@@ -52,12 +53,7 @@
   }
 </script>
 
-<button
-  onclick={open}
-  class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-colors cursor-pointer"
->
-  Connect to Postgres
-</button>
+<Button onclick={open}>Connect to Postgres</Button>
 
 <dialog
   bind:this={dialog}
@@ -167,20 +163,10 @@
     {/if}
 
     <div class="flex justify-end gap-2 mt-2">
-      <button
-        type="button"
-        onclick={close}
-        class="px-4 py-2 rounded-lg text-sm bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 transition-colors cursor-pointer"
-      >
-        Cancel
-      </button>
-      <button
-        type="submit"
-        disabled={connecting}
-        class="px-4 py-2 rounded-lg text-sm bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
-      >
+      <Button type="button" variant="outline" onclick={close}>Cancel</Button>
+      <Button type="submit" disabled={connecting}>
         {connecting ? "Connecting…" : "Connect"}
-      </button>
+      </Button>
     </div>
   </form>
 </dialog>

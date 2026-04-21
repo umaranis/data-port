@@ -1,5 +1,6 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
+  import { Button } from "$lib/components/ui/button";
 
   let cleared = $state(false);
 
@@ -10,9 +11,6 @@
   }
 </script>
 
-<button
-  onclick={clearCache}
-  class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 active:bg-gray-400 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 transition-colors cursor-pointer"
->
+<Button variant="outline" onclick={clearCache}>
   {cleared ? "Cache cleared" : "Clear cache"}
-</button>
+</Button>
