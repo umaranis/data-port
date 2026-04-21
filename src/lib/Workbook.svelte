@@ -51,7 +51,7 @@
       value={selectedSheet ?? undefined}
       onValueChange={(s) => (selectedSheet = s)}
     >
-      <Tabs.List class="flex flex-wrap !h-auto gap-y-1 gap-x-3">
+      <Tabs.List class="flex flex-wrap h-auto! gap-y-1 gap-x-3">
         <div class="text-xs pl-2">Sheets:</div>
         {#each sheets as sheet, i}
           {#if i > 0}
