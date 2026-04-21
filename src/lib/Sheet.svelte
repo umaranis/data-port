@@ -8,15 +8,19 @@
   import { SkipRows } from "$lib/SkipRows.svelte";
   import { untrack } from "svelte";
   import ColumnTypeHeader from "./ColumnTypeHeader.svelte";
+  import { type SheetAction } from "$lib/Workbook.svelte";
 
   const PAGE_SIZE = 50;
 
   type Props = {
     filePath: string | null;
     sheet: string | null;
+    sheetAction: SheetAction;
   };
 
-  let { filePath, sheet }: Props = $props();
+  let { filePath, sheet, sheetAction }: Props = $props();
+
+  let tableName = $state("");
 
   let rows = $state<string[][]>([]);
   let currentPage = $state(0);
@@ -89,6 +93,10 @@
   }
 
   $effect(() => {
+    tableName = sheet ? sheet.replaceAll(" ", "_") : "";
+  });
+
+  $effect(() => {
     sheet;
     currentPage = 0;
     rows = [];
@@ -104,7 +112,22 @@
 </script>
 
 {#if rows.length > 0}
-  <div class="m-2 flex justify-end">
+  <div class="m-2 flex items-center justify-between gap-4">
+    {#if sheetAction === "create"}
+      <div class="flex items-center gap-2">
+        <label for="table-name" class="text-sm whitespace-nowrap"
+          >Table name:</label
+        >
+        <input
+          id="table-name"
+          type="text"
+          bind:value={tableName}
+          class="border rounded px-2 py-1 text-sm w-48"
+        />
+      </div>
+    {:else}
+      <div></div>
+    {/if}
     <SheetFilters
       {filePath}
       {sheet}
@@ -114,6 +137,7 @@
       onapply={applyFilters}
     />
   </div>
+
   <div class="mt-2 overflow-x-auto">
     <Table.Root>
       <Table.Header>

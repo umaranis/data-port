@@ -75,7 +75,7 @@
       </Tabs.List>
     </Tabs.Root>
     <div class="mt-0 border rounded-lg">
-      <Sheet {filePath} sheet={selectedSheet} />
+      <Sheet {filePath} sheet={selectedSheet} sheetAction={sheetActions[selectedSheet ?? ""] ?? "create"} />
     </div>
   </div>
 {/if}
