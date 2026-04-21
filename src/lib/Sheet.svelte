@@ -96,7 +96,7 @@
   }
 
   $effect(() => {
-    tableName = sheet ? sheet.replaceAll(" ", "_") : "";
+    tableName = sheet ? sheet.toLocaleLowerCase().replaceAll(" ", "_") : "";
   });
 
   $effect(() => {
