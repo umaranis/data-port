@@ -4,7 +4,7 @@
   import ConfirmClearSkipRows from "$lib/ConfirmClearSkipRows.svelte";
   import Paging from "$lib/Paging.svelte";
   import SheetFilters from "$lib/SheetFilters.svelte";
-  import { type ColumnMeta } from "$lib/pgTypes";
+  import { type ColumnMeta, type PgType } from "$lib/pgTypes";
   import { SkipRows } from "$lib/SkipRows.svelte";
   import { untrack } from "svelte";
   import ColumnTypeHeader from "./ColumnTypeHeader.svelte";
@@ -95,6 +95,10 @@
     await loadPage(page);
   }
 
+  function applyInferredTypes(types: string[]) {
+    columnMeta = types.map((t, i) => ({ ...columnMeta[i], type: t as PgType }));
+  }
+
   $effect(() => {
     tableName = sheet ? sheet.toLocaleLowerCase().replaceAll(" ", "_") : "";
   });
@@ -121,6 +125,11 @@
       {dbTables}
       bind:tableName
       bind:selectedTable
+      {filePath}
+      {sheet}
+      headerRow={appliedHeaderRow}
+      skipRows={skipRows.applied}
+      oninfer={applyInferredTypes}
     />
     <SheetFilters
       {filePath}
