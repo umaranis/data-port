@@ -29,5 +29,5 @@
       >
     {/if}
   </div>
-  <Workbook {filePath} />
+  <Workbook {filePath} connString={pgConnString} />
 </main>

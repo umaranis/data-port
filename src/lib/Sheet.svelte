@@ -16,11 +16,30 @@
     filePath: string | null;
     sheet: string | null;
     sheetAction: SheetAction;
+    connString: string | null;
   };
 
-  let { filePath, sheet, sheetAction }: Props = $props();
+  let { filePath, sheet, sheetAction, connString }: Props = $props();
 
   let tableName = $state("");
+  let dbTables = $state<string[]>([]);
+  let selectedTable = $state("");
+  let tablesError = $state<string | null>(null);
+
+  $effect(() => {
+    if (sheetAction === "append" && connString) {
+      invoke<string[]>("pg_get_tables", { connString })
+        .then((tables) => {
+          dbTables = tables;
+          selectedTable = tables[0] ?? "";
+          tablesError = null;
+        })
+        .catch((e) => {
+          tablesError = String(e);
+          dbTables = [];
+        });
+    }
+  });
 
   let rows = $state<string[][]>([]);
   let currentPage = $state(0);
@@ -115,15 +134,32 @@
   <div class="m-2 flex items-center justify-between gap-4">
     {#if sheetAction === "create"}
       <div class="flex items-center gap-2">
-        <label for="table-name" class="text-sm whitespace-nowrap"
-          >Table name:</label
-        >
+        <label for="table-name" class="text-sm whitespace-nowrap">Table name:</label>
         <input
           id="table-name"
           type="text"
           bind:value={tableName}
           class="border rounded px-2 py-1 text-sm w-48"
         />
+      </div>
+    {:else if sheetAction === "append"}
+      <div class="flex items-center gap-2">
+        <label for="append-table" class="text-sm whitespace-nowrap">Append to table:</label>
+        {#if tablesError}
+          <span class="text-sm text-red-600">{tablesError}</span>
+        {:else if dbTables.length === 0}
+          <span class="text-sm text-gray-400">No tables found</span>
+        {:else}
+          <select
+            id="append-table"
+            bind:value={selectedTable}
+            class="border rounded px-2 py-1 text-sm dark:bg-gray-800 dark:border-gray-600"
+          >
+            {#each dbTables as t}
+              <option value={t}>{t}</option>
+            {/each}
+          </select>
+        {/if}
       </div>
     {:else}
       <div></div>
