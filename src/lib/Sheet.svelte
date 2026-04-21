@@ -104,20 +104,22 @@
 </script>
 
 {#if rows.length > 0}
-  <SheetFilters
-    {filePath}
-    {sheet}
-    bind:headerRowInput
-    {appliedHeaderRow}
-    {skipRows}
-    onapply={applyFilters}
-  />
+  <div class="m-2">
+    <SheetFilters
+      {filePath}
+      {sheet}
+      bind:headerRowInput
+      {appliedHeaderRow}
+      {skipRows}
+      onapply={applyFilters}
+    />
+  </div>
   <div class="mt-2 overflow-x-auto">
     <Table.Root>
       <Table.Header>
         <Table.Row>
           {#each rows[0] as _, i}
-            <Table.Head class="border align-top bg-gray-300 dark:bg-gray-700">
+            <Table.Head class="border align-top bg-gray-100 dark:bg-gray-900">
               <ColumnTypeHeader meta={columnMeta[i]} />
             </Table.Head>
           {/each}
@@ -125,7 +127,7 @@
         <Table.Row>
           {#each rows[0] as cell}
             <Table.Head
-              class="border whitespace-nowrap bg-blue-300 dark:bg-blue-700 font-semibold"
+              class="border whitespace-nowrap bg-blue-200 dark:bg-blue-800 font-semibold"
               >{cell}</Table.Head
             >
           {/each}
@@ -142,7 +144,9 @@
       </Table.Body>
     </Table.Root>
   </div>
-  <Paging {currentPage} {totalPages} {totalRows} onpage={goToPage} />
+  <div class="pr-2 float-right">
+    <Paging {currentPage} {totalPages} {totalRows} onpage={goToPage} />
+  </div>
 {/if}
 
 <ConfirmClearSkipRows

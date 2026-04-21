@@ -52,10 +52,11 @@
       onValueChange={(s) => (selectedSheet = s)}
     >
       <Tabs.List class="flex flex-wrap h-auto gap-y-1 gap-x-3">
+        <div class="text-xs pl-2">Sheets:</div>
         {#each sheets as sheet}
-          <div class="flex items-center">
-            <Tabs.Trigger value={sheet}
-              >{sheet}
+          <div class="flex items-center border rounded-lg">
+            <Tabs.Trigger value={sheet} class="">
+              {sheet}
               <select
                 bind:value={sheetActions[sheet]}
                 onclick={(e) => e.stopPropagation()}
@@ -70,6 +71,8 @@
         {/each}
       </Tabs.List>
     </Tabs.Root>
-    <Sheet {filePath} sheet={selectedSheet} />
+    <div class="mt-2 border rounded-lg">
+      <Sheet {filePath} sheet={selectedSheet} />
+    </div>
   </div>
 {/if}

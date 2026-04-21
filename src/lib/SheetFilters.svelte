@@ -20,7 +20,7 @@
   }: Props = $props();
 
   let hasChanges = $derived(
-    headerRowInput !== appliedHeaderRow + 1 || skipRows.hasChanges
+    headerRowInput !== appliedHeaderRow + 1 || skipRows.hasChanges,
   );
 
   async function findBlankRows() {
@@ -29,7 +29,7 @@
   }
 </script>
 
-<div class="mt-4 flex items-center gap-2 flex-wrap">
+<div class="flex items-center gap-2 flex-wrap">
   <label for="header-row" class="text-sm whitespace-nowrap">
     Header row:
     <span
@@ -45,7 +45,9 @@
     onkeydown={(e) => e.key === "Enter" && hasChanges && onapply()}
     class="border rounded px-2 py-1 text-sm w-16"
   />
-  <label for="skip-rows" class="text-sm whitespace-nowrap ml-2">Skip rows:</label>
+  <label for="skip-rows" class="text-sm whitespace-nowrap ml-2"
+    >Skip rows:</label
+  >
   <input
     id="skip-rows"
     type="text"
