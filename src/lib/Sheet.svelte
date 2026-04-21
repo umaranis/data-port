@@ -104,7 +104,7 @@
 </script>
 
 {#if rows.length > 0}
-  <div class="m-2">
+  <div class="m-2 flex justify-end">
     <SheetFilters
       {filePath}
       {sheet}
@@ -127,7 +127,7 @@
         <Table.Row>
           {#each rows[0] as cell}
             <Table.Head
-              class="border whitespace-nowrap bg-blue-200 dark:bg-blue-800 font-semibold"
+              class="border whitespace-nowrap bg-gray-50 dark:bg-gray-950 font-semibold"
               >{cell}</Table.Head
             >
           {/each}

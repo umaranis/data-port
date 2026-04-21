@@ -53,14 +53,17 @@
     >
       <Tabs.List class="flex flex-wrap h-auto gap-y-1 gap-x-3">
         <div class="text-xs pl-2">Sheets:</div>
-        {#each sheets as sheet}
-          <div class="flex items-center border rounded-lg">
+        {#each sheets as sheet, i}
+          {#if i > 0}
+            <div class="w-px self-stretch bg-border"></div>
+          {/if}
+          <div class="flex items-center">
             <Tabs.Trigger value={sheet} class="">
               {sheet}
               <select
                 bind:value={sheetActions[sheet]}
                 onclick={(e) => e.stopPropagation()}
-                class="ml-1 text-xs border rounded px-1 py-0.5 bg-white dark:bg-gray-800 dark:border-gray-600 cursor-pointer"
+                class="ml-1 text-xs border rounded px-1 py-0.5 dark:bg-gray-800 dark:border-gray-600 cursor-pointer"
               >
                 {#each SHEET_ACTIONS as action}
                   <option value={action.value}>{action.label}</option>
@@ -71,7 +74,7 @@
         {/each}
       </Tabs.List>
     </Tabs.Root>
-    <div class="mt-2 border rounded-lg">
+    <div class="mt-0 border rounded-lg">
       <Sheet {filePath} sheet={selectedSheet} />
     </div>
   </div>
