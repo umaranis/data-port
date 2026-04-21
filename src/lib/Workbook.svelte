@@ -58,7 +58,7 @@
             <div class="w-px self-stretch bg-border"></div>
           {/if}
           <div class="flex items-center">
-            <Tabs.Trigger value={sheet} class="py-3 px-4">
+            <Tabs.Trigger value={sheet} class="py-2 px-4">
               {sheet}
               <select
                 bind:value={sheetActions[sheet]}
