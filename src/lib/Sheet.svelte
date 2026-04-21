@@ -1,7 +1,7 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
   import * as Table from "$lib/components/ui/table";
-  import * as AlertDialog from "$lib/components/ui/alert-dialog";
+  import ConfirmClearSkipRows from "$lib/ConfirmClearSkipRows.svelte";
   import Paging from "$lib/Paging.svelte";
   import SheetFilters from "$lib/SheetFilters.svelte";
   import { type ColumnMeta } from "$lib/pgTypes";
@@ -142,22 +142,8 @@
   <Paging {currentPage} {totalPages} {totalRows} onpage={goToPage} />
 {/if}
 
-<AlertDialog.Root bind:open={confirmDialogOpen}>
-  <AlertDialog.Content>
-    <AlertDialog.Header>
-      <AlertDialog.Title>Clear skipped rows?</AlertDialog.Title>
-      <AlertDialog.Description>
-        Changing the header row resets row numbering. The {skipRows.applied
-          .length} currently skipped row{skipRows.applied.length !== 1
-          ? "s"
-          : ""} will be cleared.
-      </AlertDialog.Description>
-    </AlertDialog.Header>
-    <AlertDialog.Footer>
-      <AlertDialog.Cancel>Cancel</AlertDialog.Cancel>
-      <AlertDialog.Action onclick={() => commitFilters(pendingHeaderRow)}>
-        Continue
-      </AlertDialog.Action>
-    </AlertDialog.Footer>
-  </AlertDialog.Content>
-</AlertDialog.Root>
+<ConfirmClearSkipRows
+  bind:open={confirmDialogOpen}
+  count={skipRows.applied.length}
+  onconfirm={() => commitFilters(pendingHeaderRow)}
+/>
