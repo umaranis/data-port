@@ -172,6 +172,39 @@ fn get_blank_rows(
     Ok(blank)
 }
 
+#[tauri::command]
+async fn pg_get_tables(conn_string: String) -> Result<Vec<String>, String> {
+    let (client, connection) = tokio_postgres::connect(&conn_string, NoTls)
+        .await
+        .map_err(|e| full_error(&e))?;
+    tokio::spawn(async move {
+        let _ = connection.await;
+    });
+
+    let rows = client
+        .query(
+            "SELECT table_schema, table_name \
+             FROM information_schema.tables \
+             WHERE table_type = 'BASE TABLE' \
+               AND table_schema NOT IN ('pg_catalog', 'information_schema') \
+             ORDER BY table_schema, table_name",
+            &[],
+        )
+        .await
+        .map_err(|e| full_error(&e))?;
+
+    let tables = rows
+        .iter()
+        .map(|r| {
+            let schema: &str = r.get(0);
+            let table: &str = r.get(1);
+            format!("{schema}.{table}")
+        })
+        .collect();
+
+    Ok(tables)
+}
+
 fn full_error(e: &dyn std::error::Error) -> String {
     let mut msg = e.to_string();
     let mut src = e.source();
@@ -212,7 +245,8 @@ pub fn run() {
             get_sheet_rows_paged_filtered,
             get_blank_rows,
             clear_cache,
-            pg_connect
+            pg_connect,
+            pg_get_tables
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
