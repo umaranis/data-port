@@ -46,7 +46,7 @@
 {/if}
 
 {#if sheets.length > 0}
-  <div class="mt-4 w-full max-w-3xl">
+  <div class="mt-4 w-full border rounded-lg p-2">
     <Tabs.Root
       value={selectedSheet ?? undefined}
       onValueChange={(s) => (selectedSheet = s)}
@@ -70,6 +70,6 @@
         {/each}
       </Tabs.List>
     </Tabs.Root>
+    <Sheet {filePath} sheet={selectedSheet} />
   </div>
-  <Sheet {filePath} sheet={selectedSheet} />
 {/if}
