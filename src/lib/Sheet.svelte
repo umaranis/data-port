@@ -25,10 +25,6 @@
   let tableName = $state("");
   let selectedTable = $state("");
 
-  $effect(() => {
-    selectedTable = dbTables[0] ?? "";
-  });
-
   let rows = $state<string[][]>([]);
   let currentPage = $state(0);
   let totalRows = $state(0);
@@ -120,7 +116,12 @@
 
 {#if rows.length > 0}
   <div class="m-2 flex items-center justify-between gap-4">
-    <SheetActionOptions {sheetAction} {dbTables} bind:tableName bind:selectedTable />
+    <SheetActionOptions
+      {sheetAction}
+      {dbTables}
+      bind:tableName
+      bind:selectedTable
+    />
     <SheetFilters
       {filePath}
       {sheet}

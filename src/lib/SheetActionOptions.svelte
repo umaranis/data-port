@@ -37,6 +37,7 @@
         bind:value={selectedTable}
         class="border rounded px-2 py-1 text-sm dark:bg-gray-800 dark:border-gray-600"
       >
+        <option value="">— none —</option>
         {#each dbTables as t}
           <option value={t}>{t}</option>
         {/each}
