@@ -55,7 +55,10 @@ fn is_jsonb_str(s: &str) -> bool {
 }
 
 fn infer_col_type(cells: &[Data]) -> &'static str {
-    let non_empty: Vec<&Data> = cells.iter().filter(|c| !matches!(c, Data::Empty)).collect();
+    let non_empty: Vec<&Data> = cells
+        .iter()
+        .filter(|c| !matches!(c, Data::Empty) && !matches!(c, Data::String(s) if s.is_empty()))
+        .collect();
 
     if non_empty.is_empty() {
         return "text";
