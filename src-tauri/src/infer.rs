@@ -55,10 +55,7 @@ fn is_jsonb_str(s: &str) -> bool {
 }
 
 fn infer_col_type(cells: &[Data]) -> &'static str {
-    let non_empty: Vec<&Data> = cells
-        .iter()
-        .filter(|c| !matches!(c, Data::Empty))
-        .collect();
+    let non_empty: Vec<&Data> = cells.iter().filter(|c| !matches!(c, Data::Empty)).collect();
 
     if non_empty.is_empty() {
         return "text";
@@ -73,9 +70,9 @@ fn infer_col_type(cells: &[Data]) -> &'static str {
     }
 
     if non_empty.iter().all(|c| matches!(c, Data::Int(_))) {
-        let fits_i32 = non_empty.iter().all(|c| {
-            matches!(c, Data::Int(i) if *i >= i32::MIN as i64 && *i <= i32::MAX as i64)
-        });
+        let fits_i32 = non_empty
+            .iter()
+            .all(|c| matches!(c, Data::Int(i) if *i >= i32::MIN as i64 && *i <= i32::MAX as i64));
         return if fits_i32 { "integer" } else { "bigint" };
     }
 
@@ -132,6 +129,22 @@ fn infer_col_type(cells: &[Data]) -> &'static str {
     "text"
 }
 
+fn infer_types_from_rows(data_rows: &[Vec<Data>]) -> Vec<String> {
+    if data_rows.is_empty() {
+        return vec![];
+    }
+    let col_count = data_rows.iter().map(|r| r.len()).max().unwrap_or(0);
+    (0..col_count)
+        .map(|col| {
+            let cells: Vec<Data> = data_rows
+                .iter()
+                .filter_map(|row| row.get(col).cloned())
+                .collect();
+            infer_col_type(&cells).to_string()
+        })
+        .collect()
+}
+
 #[tauri::command]
 pub fn infer_column_types(
     path: &str,
@@ -155,21 +168,9 @@ pub fn infer_column_types(
         .map(|(_, row)| row.to_vec())
         .collect();
 
-    if data_rows.is_empty() {
-        return Ok(vec![]);
-    }
-
-    let col_count = data_rows.iter().map(|r| r.len()).max().unwrap_or(0);
-
-    let types = (0..col_count)
-        .map(|col| {
-            let cells: Vec<Data> = data_rows
-                .iter()
-                .filter_map(|row| row.get(col).cloned())
-                .collect();
-            infer_col_type(&cells).to_string()
-        })
-        .collect();
-
-    Ok(types)
+    Ok(infer_types_from_rows(&data_rows))
 }
+
+#[cfg(test)]
+#[path = "infer_tests.rs"]
+mod tests;
