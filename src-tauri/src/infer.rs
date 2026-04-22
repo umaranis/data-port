@@ -55,78 +55,173 @@ fn is_jsonb_str(s: &str) -> bool {
 }
 
 fn infer_col_type(cells: &[Data]) -> &'static str {
-    let non_empty: Vec<&Data> = cells
-        .iter()
-        .filter(|c| !matches!(c, Data::Empty) && !matches!(c, Data::String(s) if s.is_empty()))
-        .collect();
+    let mut count = 0usize;
 
-    if non_empty.is_empty() {
+    let mut all_bool = true;
+    let mut all_datetime = true;
+    let mut all_int_i32 = true;
+    let mut all_int_big = true;
+    let mut all_numeric = true;
+    let mut all_string = true;
+
+    let mut str_uuid = true;
+    let mut str_bool = true;
+    let mut str_int = true;
+    let mut str_bigint = true;
+    let mut str_float = true;
+    let mut str_timestamptz = true;
+    let mut str_timestamp = true;
+    let mut str_date = true;
+    let mut str_jsonb = true;
+
+    for cell in cells {
+        let s = match cell {
+            Data::Empty => continue,
+            Data::String(s) if s.is_empty() => continue,
+            Data::Bool(_) => {
+                all_datetime = false;
+                all_int_i32 = false;
+                all_int_big = false;
+                all_numeric = false;
+                all_string = false;
+                count += 1;
+                continue;
+            }
+            Data::DateTime(_) => {
+                all_bool = false;
+                all_int_i32 = false;
+                all_int_big = false;
+                all_numeric = false;
+                all_string = false;
+                count += 1;
+                continue;
+            }
+            Data::Int(i) => {
+                all_bool = false;
+                all_datetime = false;
+                all_string = false;
+                if *i < i32::MIN as i64 || *i > i32::MAX as i64 {
+                    all_int_i32 = false;
+                }
+                count += 1;
+                continue;
+            }
+            Data::Float(f) => {
+                all_bool = false;
+                all_datetime = false;
+                if (*f).fract() == 0.0 {
+                    if *f <= i32::MIN as f64 && *f >= i32::MAX as f64 {
+                        all_int_i32 = false;
+                    }
+                    if *f <= i64::MIN as f64 && *f >= i64::MAX as f64 {
+                        all_int_big = false;
+                    }
+                } else {
+                    all_int_i32 = false;
+                    all_int_big = false;
+                }
+                all_string = false;
+                count += 1;
+                continue;
+            }
+            Data::String(s) => {
+                all_bool = false;
+                all_datetime = false;
+                all_int_i32 = false;
+                all_int_big = false;
+                all_numeric = false;
+                count += 1;
+                s.as_str()
+            }
+            _ => {
+                all_bool = false;
+                all_datetime = false;
+                all_int_i32 = false;
+                all_int_big = false;
+                all_numeric = false;
+                all_string = false;
+                count += 1;
+                continue;
+            }
+        };
+
+        if str_uuid && !is_uuid(s) {
+            str_uuid = false;
+        }
+        if str_bool && !is_boolean_str(s) {
+            str_bool = false;
+        }
+        if str_int && s.parse::<i32>().is_err() {
+            str_int = false;
+        }
+        if str_bigint && s.parse::<i64>().is_err() {
+            str_bigint = false;
+        }
+        if str_float && s.parse::<f64>().is_err() {
+            str_float = false;
+        }
+        if str_timestamptz && !is_timestamptz_str(s) {
+            str_timestamptz = false;
+        }
+        if str_timestamp && !is_timestamp_str(s) {
+            str_timestamp = false;
+        }
+        if str_date && !is_date_str(s) {
+            str_date = false;
+        }
+        if str_jsonb && !is_jsonb_str(s) {
+            str_jsonb = false;
+        }
+    }
+
+    if count == 0 {
         return "text";
     }
 
-    if non_empty.iter().all(|c| matches!(c, Data::Bool(_))) {
+    if all_bool {
         return "boolean";
     }
-
-    if non_empty.iter().all(|c| matches!(c, Data::DateTime(_))) {
+    if all_datetime {
         return "timestamp";
     }
-
-    if non_empty.iter().all(|c| matches!(c, Data::Int(_))) {
-        let fits_i32 = non_empty
-            .iter()
-            .all(|c| matches!(c, Data::Int(i) if *i >= i32::MIN as i64 && *i <= i32::MAX as i64));
-        return if fits_i32 { "integer" } else { "bigint" };
-    }
-
-    if non_empty
-        .iter()
-        .all(|c| matches!(c, Data::Int(_) | Data::Float(_)))
-    {
-        return "double precision";
-    }
-
-    let strings: Option<Vec<&str>> = non_empty
-        .iter()
-        .map(|c| {
-            if let Data::String(s) = c {
-                Some(s.as_str())
-            } else {
-                None
-            }
-        })
-        .collect();
-
-    let Some(strings) = strings else {
-        return "text";
-    };
-
-    if strings.iter().all(|s| is_uuid(s)) {
-        return "uuid";
-    }
-    if strings.iter().all(|s| is_boolean_str(s)) {
-        return "boolean";
-    }
-    if strings.iter().all(|s| s.parse::<i32>().is_ok()) {
+    if all_int_i32 {
         return "integer";
     }
-    if strings.iter().all(|s| s.parse::<i64>().is_ok()) {
+    if all_int_big {
         return "bigint";
     }
-    if strings.iter().all(|s| s.parse::<f64>().is_ok()) {
+    if all_numeric {
         return "double precision";
     }
-    if strings.iter().all(|s| is_timestamptz_str(s)) {
-        return "timestamptz";
-    }
-    if strings.iter().all(|s| is_timestamp_str(s)) {
-        return "timestamp";
-    }
-    if strings.iter().all(|s| is_date_str(s)) {
-        return "date";
-    }
-    if strings.iter().all(|s| is_jsonb_str(s)) {
-        return "jsonb";
+
+    if all_string {
+        if str_uuid {
+            return "uuid";
+        }
+        if str_bool {
+            return "boolean";
+        }
+        if str_int {
+            return "integer";
+        }
+        if str_bigint {
+            return "bigint";
+        }
+        if str_float {
+            return "double precision";
+        }
+        if str_timestamptz {
+            return "timestamptz";
+        }
+        if str_timestamp {
+            return "timestamp";
+        }
+        if str_date {
+            return "date";
+        }
+        if str_jsonb {
+            return "jsonb";
+        }
     }
 
     "text"
