@@ -129,6 +129,8 @@
       {sheet}
       headerRow={appliedHeaderRow}
       skipRows={skipRows.applied}
+      columnHeaders={rows[0] ?? []}
+      {columnMeta}
       oninfer={applyInferredTypes}
     />
     <SheetFilters

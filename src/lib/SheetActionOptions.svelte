@@ -1,7 +1,9 @@
 <script lang="ts">
   import { type SheetAction } from "$lib/Workbook.svelte";
   import InferTypesButton from "$lib/InferTypesButton.svelte";
+  import GenerateSqlDialog from "$lib/GenerateSqlDialog.svelte";
   import type { ColumnMeta } from "./pgTypes";
+  import { Button } from "$lib/components/ui/button";
 
   type Props = {
     sheetAction: SheetAction;
@@ -12,6 +14,8 @@
     sheet: string | null;
     headerRow: number;
     skipRows: number[];
+    columnHeaders: string[];
+    columnMeta: ColumnMeta[];
     oninfer: (types: ColumnMeta[]) => void;
   };
 
@@ -24,8 +28,12 @@
     sheet,
     headerRow,
     skipRows,
+    columnHeaders,
+    columnMeta,
     oninfer,
   }: Props = $props();
+
+  let sqlDialog = $state<GenerateSqlDialog | null>(null);
 </script>
 
 {#if sheetAction === "create"}
@@ -39,7 +47,21 @@
       class="border rounded px-2 py-1 text-sm w-48"
     />
     <InferTypesButton {filePath} {sheet} {headerRow} {skipRows} {oninfer} />
+    <Button
+      variant="outline"
+      size="sm"
+      disabled={columnHeaders.length === 0}
+      onclick={() => sqlDialog?.open()}
+    >
+      Generate SQL
+    </Button>
   </div>
+  <GenerateSqlDialog
+    bind:this={sqlDialog}
+    {tableName}
+    {columnHeaders}
+    {columnMeta}
+  />
 {:else if sheetAction === "append"}
   <div class="flex items-center gap-2">
     <label for="append-table" class="text-sm whitespace-nowrap"

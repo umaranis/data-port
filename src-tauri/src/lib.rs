@@ -231,6 +231,18 @@ async fn pg_connect(conn_string: String) -> Result<(), String> {
 }
 
 #[tauri::command]
+async fn pg_execute(conn_string: String, sql: String) -> Result<(), String> {
+    let (client, connection) = tokio_postgres::connect(&conn_string, NoTls)
+        .await
+        .map_err(|e| full_error(&e))?;
+    tokio::spawn(async move {
+        let _ = connection.await;
+    });
+    client.execute(&sql, &[]).await.map_err(|e| full_error(&e))?;
+    Ok(())
+}
+
+#[tauri::command]
 fn clear_cache(cache: tauri::State<SheetCache>) {
     cache.0.lock().unwrap().clear();
 }
@@ -249,7 +261,8 @@ pub fn run() {
             infer::infer_column_types,
             clear_cache,
             pg_connect,
-            pg_get_tables
+            pg_get_tables,
+            pg_execute
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
