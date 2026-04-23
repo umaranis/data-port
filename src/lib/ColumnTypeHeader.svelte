@@ -4,7 +4,7 @@
   type Props = { meta: ColumnMeta };
   let { meta }: Props = $props();
 
-  let modifiers = $derived(TYPE_MODIFIERS[meta.type]);
+  let modifiers = $derived(TYPE_MODIFIERS[meta.type] ?? {});
 </script>
 
 <div class="flex flex-col gap-1 py-1 min-w-27.5">

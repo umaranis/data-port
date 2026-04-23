@@ -2,6 +2,38 @@ use calamine::Data;
 
 use crate::SheetCache;
 
+#[derive(serde::Serialize, Debug, PartialEq)]
+pub struct ColumnMeta {
+    #[serde(rename = "type")]
+    pub pg_type: &'static str,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub length: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub precision: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub scale: Option<u32>,
+}
+
+impl ColumnMeta {
+    fn of(pg_type: &'static str) -> Self {
+        ColumnMeta {
+            pg_type,
+            length: None,
+            precision: None,
+            scale: None,
+        }
+    }
+
+    fn varchar(length: u32) -> Self {
+        ColumnMeta {
+            pg_type: "varchar",
+            length: Some(length),
+            precision: None,
+            scale: None,
+        }
+    }
+}
+
 fn is_uuid(s: &str) -> bool {
     let b = s.as_bytes();
     if b.len() != 36 {
@@ -54,8 +86,9 @@ fn is_jsonb_str(s: &str) -> bool {
     (t.starts_with('{') && t.ends_with('}')) || (t.starts_with('[') && t.ends_with(']'))
 }
 
-fn infer_col_type(cells: &[Data]) -> &'static str {
+fn infer_col_type(cells: &[Data]) -> ColumnMeta {
     let mut count = 0usize;
+    let mut max_len = 0usize;
 
     let mut all_bool = true;
     let mut all_datetime = true;
@@ -130,6 +163,7 @@ fn infer_col_type(cells: &[Data]) -> &'static str {
                 all_int_i32 = false;
                 all_int_big = false;
                 all_numeric = false;
+                max_len = max_len.max(s.len());
                 count += 1;
                 s.as_str()
             }
@@ -175,59 +209,59 @@ fn infer_col_type(cells: &[Data]) -> &'static str {
     }
 
     if count == 0 {
-        return "text";
+        return ColumnMeta::of("text");
     }
 
     if all_bool {
-        return "boolean";
+        return ColumnMeta::of("boolean");
     }
     if all_datetime {
-        return "timestamp";
+        return ColumnMeta::of("timestamp");
     }
     if all_int_i32 {
-        return "integer";
+        return ColumnMeta::of("integer");
     }
     if all_int_big {
-        return "bigint";
+        return ColumnMeta::of("bigint");
     }
     if all_numeric {
-        return "double precision";
+        return ColumnMeta::of("double precision");
     }
 
     if all_string {
         if str_uuid {
-            return "uuid";
+            return ColumnMeta::of("uuid");
         }
         if str_bool {
-            return "boolean";
+            return ColumnMeta::of("boolean");
         }
         if str_int {
-            return "integer";
+            return ColumnMeta::of("integer");
         }
         if str_bigint {
-            return "bigint";
+            return ColumnMeta::of("bigint");
         }
         if str_float {
-            return "double precision";
+            return ColumnMeta::of("double precision");
         }
         if str_timestamptz {
-            return "timestamptz";
+            return ColumnMeta::of("timestamptz");
         }
         if str_timestamp {
-            return "timestamp";
+            return ColumnMeta::of("timestamp");
         }
         if str_date {
-            return "date";
+            return ColumnMeta::of("date");
         }
         if str_jsonb {
-            return "jsonb";
+            return ColumnMeta::of("jsonb");
         }
     }
 
-    "text"
+    ColumnMeta::varchar(max_len as u32)
 }
 
-fn infer_types_from_rows(data_rows: &[Vec<Data>]) -> Vec<String> {
+fn infer_types_from_rows(data_rows: &[Vec<Data>]) -> Vec<ColumnMeta> {
     if data_rows.is_empty() {
         return vec![];
     }
@@ -238,7 +272,7 @@ fn infer_types_from_rows(data_rows: &[Vec<Data>]) -> Vec<String> {
                 .iter()
                 .filter_map(|row| row.get(col).cloned())
                 .collect();
-            infer_col_type(&cells).to_string()
+            infer_col_type(&cells)
         })
         .collect()
 }
@@ -250,7 +284,7 @@ pub fn infer_column_types(
     header_row: usize,
     skip_rows: Vec<usize>,
     cache: tauri::State<SheetCache>,
-) -> Result<Vec<String>, String> {
+) -> Result<Vec<ColumnMeta>, String> {
     let range = cache.get_range(path, sheet)?;
     let mut all_rows = range.rows();
 

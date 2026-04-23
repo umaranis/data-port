@@ -95,8 +95,8 @@
     await loadPage(page);
   }
 
-  function applyInferredTypes(types: string[]) {
-    columnMeta = types.map((t, i) => ({ ...columnMeta[i], type: t as PgType }));
+  function applyInferredTypes(types: ColumnMeta[]) {
+    columnMeta = types;
   }
 
   $effect(() => {

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { type SheetAction } from "$lib/Workbook.svelte";
   import InferTypesButton from "$lib/InferTypesButton.svelte";
+  import type { ColumnMeta } from "./pgTypes";
 
   type Props = {
     sheetAction: SheetAction;
@@ -11,7 +12,7 @@
     sheet: string | null;
     headerRow: number;
     skipRows: number[];
-    oninfer: (types: string[]) => void;
+    oninfer: (types: ColumnMeta[]) => void;
   };
 
   let {
