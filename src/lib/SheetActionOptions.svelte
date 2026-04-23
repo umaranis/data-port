@@ -65,7 +65,7 @@
   }
 </script>
 
-{#if sheetAction === "create"}
+{#if sheetAction === "create" || sheetAction === "recreate"}
   <div class="flex flex-col gap-1">
     <div class="flex items-center gap-2">
       <label for="table-name" class="text-sm whitespace-nowrap">Table name:</label>
@@ -105,6 +105,7 @@
     {columnHeaders}
     {columnMeta}
     {savedConnString}
+    dropTable={sheetAction === "recreate"}
   />
 {:else if sheetAction === "append"}
   <div class="flex flex-col gap-1">

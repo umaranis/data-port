@@ -8,9 +8,10 @@
     columnHeaders: string[];
     columnMeta: ColumnMeta[];
     savedConnString?: string | null;
+    dropTable?: boolean;
   };
 
-  let { tableName, columnHeaders, columnMeta, savedConnString }: Props = $props();
+  let { tableName, columnHeaders, columnMeta, savedConnString, dropTable = false }: Props = $props();
 
   let dialog = $state<HTMLDialogElement | null>(null);
   let connString = $state("");
@@ -48,7 +49,10 @@
       const type = pgTypeStr(columnMeta[i] ?? { type: "text" });
       return `  "${name}" ${type}`;
     });
-    return `CREATE TABLE "${tableName}" (\n${cols.join(",\n")}\n);`;
+    const create = `CREATE TABLE "${tableName}" (\n${cols.join(",\n")}\n);`;
+    return dropTable
+      ? `DROP TABLE IF EXISTS "${tableName}";\n${create}`
+      : create;
   });
 
   export function open() {

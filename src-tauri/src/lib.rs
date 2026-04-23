@@ -344,7 +344,7 @@ async fn pg_execute(conn_string: String, sql: String) -> Result<(), String> {
         let _ = connection.await;
     });
     client
-        .execute(&sql, &[])
+        .batch_execute(&sql)
         .await
         .map_err(|e| full_error(&e))?;
     Ok(())
