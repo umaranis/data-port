@@ -16,6 +16,7 @@
     skipRows: number[];
     columnHeaders: string[];
     columnMeta: ColumnMeta[];
+    savedConnString?: string | null;
     oninfer: (types: ColumnMeta[]) => void;
   };
 
@@ -30,6 +31,7 @@
     skipRows,
     columnHeaders,
     columnMeta,
+    savedConnString,
     oninfer,
   }: Props = $props();
 
@@ -61,6 +63,7 @@
     {tableName}
     {columnHeaders}
     {columnMeta}
+    {savedConnString}
   />
 {:else if sheetAction === "append"}
   <div class="flex items-center gap-2">

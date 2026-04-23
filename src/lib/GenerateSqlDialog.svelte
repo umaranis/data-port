@@ -7,9 +7,10 @@
     tableName: string;
     columnHeaders: string[];
     columnMeta: ColumnMeta[];
+    savedConnString?: string | null;
   };
 
-  let { tableName, columnHeaders, columnMeta }: Props = $props();
+  let { tableName, columnHeaders, columnMeta, savedConnString }: Props = $props();
 
   let dialog = $state<HTMLDialogElement | null>(null);
   let connString = $state("");
@@ -51,6 +52,7 @@
   });
 
   export function open() {
+    connString = savedConnString ?? "";
     status = null;
     dialog?.showModal();
   }

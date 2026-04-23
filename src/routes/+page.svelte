@@ -35,5 +35,5 @@
       >
     {/if}
   </div>
-  <Workbook {filePath} {dbTables} />
+  <Workbook {filePath} {dbTables} connString={pgConnString} />
 </main>

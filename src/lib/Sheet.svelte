@@ -18,9 +18,10 @@
     sheet: string | null;
     sheetAction: SheetAction;
     dbTables: string[];
+    savedConnString?: string | null;
   };
 
-  let { filePath, sheet, sheetAction, dbTables }: Props = $props();
+  let { filePath, sheet, sheetAction, dbTables, savedConnString }: Props = $props();
 
   let tableName = $state("");
   let selectedTable = $state("");
@@ -131,6 +132,7 @@
       skipRows={skipRows.applied}
       columnHeaders={rows[0] ?? []}
       {columnMeta}
+      {savedConnString}
       oninfer={applyInferredTypes}
     />
     <SheetFilters
