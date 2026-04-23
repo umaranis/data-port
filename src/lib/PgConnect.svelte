@@ -12,12 +12,14 @@
   let database = $state("");
   let username = $state("");
   let password = $state("");
+  let schema = $state("");
 
   let connString = $derived.by(() => {
     let userInfo = username
       ? `${encodeURIComponent(username)}:${encodeURIComponent(password)}@`
       : "";
-    return `postgresql://${userInfo}${host}:${port}/${database}`;
+    let base = `postgresql://${userInfo}${host}:${port}/${database}`;
+    return schema ? `${base}?options=-c%20search_path%3D${encodeURIComponent(schema)}` : base;
   });
 
   type Status = { ok: true } | { ok: false; error: string } | null;
@@ -112,6 +114,23 @@
         bind:value={database}
         class="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600"
       />
+    </div>
+
+    <div class="flex gap-3">
+      <div class="flex flex-col gap-1 flex-1">
+        <label
+          for="pg-schema"
+          class="text-sm font-medium text-gray-700 dark:text-gray-300"
+          >Schema</label
+        >
+        <input
+          id="pg-schema"
+          type="text"
+          bind:value={schema}
+          placeholder="public"
+          class="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600"
+        />
+      </div>
     </div>
 
     <div class="flex flex-col gap-1">
