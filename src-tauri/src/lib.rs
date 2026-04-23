@@ -231,6 +231,93 @@ async fn pg_connect(conn_string: String) -> Result<(), String> {
 }
 
 #[tauri::command]
+async fn pg_insert_rows(
+    conn_string: String,
+    path: String,
+    sheet: String,
+    table_name: String,
+    header_row: usize,
+    skip_rows: Vec<usize>,
+    cache: tauri::State<'_, SheetCache>,
+) -> Result<usize, String> {
+    let range = cache.get_range(&path, &sheet)?;
+
+    let mut all_rows = range.rows();
+    for _ in 0..header_row {
+        all_rows.next();
+    }
+
+    let headers: Vec<String> = all_rows
+        .next()
+        .map(|r| r.iter().map(cell_to_string).collect())
+        .unwrap_or_default();
+
+    if headers.is_empty() {
+        return Ok(0);
+    }
+
+    let skip_set: std::collections::HashSet<usize> = skip_rows.into_iter().collect();
+    let data_rows: Vec<Vec<String>> = all_rows
+        .enumerate()
+        .filter(|(i, _)| !skip_set.contains(&(i + 1)))
+        .map(|(_, row)| row.iter().map(cell_to_string).collect())
+        .collect();
+
+    if data_rows.is_empty() {
+        return Ok(0);
+    }
+
+    let (mut client, connection) = tokio_postgres::connect(&conn_string, NoTls)
+        .await
+        .map_err(|e| full_error(&e))?;
+    tokio::spawn(async move {
+        let _ = connection.await;
+    });
+
+    let quoted_table = if let Some(dot) = table_name.find('.') {
+        format!("\"{}\".\"{}\"", &table_name[..dot], &table_name[dot + 1..])
+    } else {
+        format!("\"{}\"", table_name)
+    };
+
+    let col_list = headers
+        .iter()
+        .map(|h| format!("\"{}\"", h))
+        .collect::<Vec<_>>()
+        .join(", ");
+
+    let placeholders = (1..=headers.len())
+        .map(|i| format!("${i}"))
+        .collect::<Vec<_>>()
+        .join(", ");
+
+    let insert_sql = format!("INSERT INTO {quoted_table} ({col_list}) VALUES ({placeholders})");
+
+    let tx = client
+        .build_transaction()
+        .start()
+        .await
+        .map_err(|e| full_error(&e))?;
+
+    let stmt = tx.prepare(&insert_sql).await.map_err(|e| full_error(&e))?;
+
+    for row in &data_rows {
+        let params: Vec<String> = (0..headers.len())
+            .map(|i| row.get(i).cloned().unwrap_or_default())
+            .collect();
+        let params_ref: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> =
+            params.iter().map(|s| s as _).collect();
+        tx.execute(&stmt, &params_ref)
+            .await
+            .map_err(|e| full_error(&e))?;
+    }
+
+    tx.commit().await.map_err(|e| full_error(&e))?;
+
+    Ok(data_rows.len())
+}
+
+#[tauri::command]
 async fn pg_execute(conn_string: String, sql: String) -> Result<(), String> {
     let (client, connection) = tokio_postgres::connect(&conn_string, NoTls)
         .await
@@ -238,7 +325,10 @@ async fn pg_execute(conn_string: String, sql: String) -> Result<(), String> {
     tokio::spawn(async move {
         let _ = connection.await;
     });
-    client.execute(&sql, &[]).await.map_err(|e| full_error(&e))?;
+    client
+        .execute(&sql, &[])
+        .await
+        .map_err(|e| full_error(&e))?;
     Ok(())
 }
 
@@ -262,7 +352,8 @@ pub fn run() {
             clear_cache,
             pg_connect,
             pg_get_tables,
-            pg_execute
+            pg_execute,
+            pg_insert_rows
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
