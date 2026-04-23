@@ -138,6 +138,17 @@ fn string_dates_are_date() {
 }
 
 #[test]
+fn native_string_bigint_are_bigint() {
+    assert_eq!(
+        infer_col_type(&[
+            Data::String("2816841904".into()),
+            Data::String("3000000000".into())
+        ]),
+        col("bigint")
+    );
+}
+
+#[test]
 fn string_json_objects_are_jsonb() {
     assert_eq!(infer_col_type(&[s(r#"{"key": "val"}"#)]), col("jsonb"));
     assert_eq!(infer_col_type(&[s(r#"[1, 2, 3]"#)]), col("jsonb"));

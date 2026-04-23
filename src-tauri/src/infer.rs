@@ -103,7 +103,7 @@ fn infer_col_type(cells: &[Data]) -> ColumnMeta {
     let mut str_jsonb = true;
 
     for cell in cells {
-        let s = match cell {
+        match cell {
             Data::Empty => continue,
             Data::String(s) if s.is_empty() => continue,
             Data::Bool(_) => {
@@ -138,10 +138,10 @@ fn infer_col_type(cells: &[Data]) -> ColumnMeta {
                 all_bool = false;
                 all_datetime = false;
                 if (*f).fract() == 0.0 {
-                    if *f <= i32::MIN as f64 && *f >= i32::MAX as f64 {
+                    if *f <= i32::MIN as f64 || *f >= i32::MAX as f64 {
                         all_int_i32 = false;
                     }
-                    if *f <= i64::MIN as f64 && *f >= i64::MAX as f64 {
+                    if *f <= i64::MIN as f64 || *f >= i64::MAX as f64 {
                         all_int_big = false;
                     }
                 } else {
