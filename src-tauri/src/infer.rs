@@ -98,13 +98,8 @@ fn infer_col_type(cells: &[Data]) -> ColumnMeta {
     let mut all_string = true;
 
     let mut str_uuid = true;
-    let mut str_bool = true;
-    let mut str_int = true;
-    let mut str_bigint = true;
-    let mut str_float = true;
     let mut str_timestamptz = true;
     let mut str_timestamp = true;
-    let mut str_date = true;
     let mut str_jsonb = true;
 
     for cell in cells {
@@ -158,11 +153,34 @@ fn infer_col_type(cells: &[Data]) -> ColumnMeta {
                 continue;
             }
             Data::String(s) => {
-                all_bool = false;
-                all_datetime = false;
-                all_int_i32 = false;
-                all_int_big = false;
-                all_numeric = false;
+                if str_uuid && !is_uuid(s) {
+                    str_uuid = false;
+                }
+                if all_bool && !is_boolean_str(s) {
+                    all_bool = false;
+                }
+                if all_int_i32 && s.parse::<i32>().is_err() {
+                    all_int_i32 = false;
+                }
+                if all_int_big && s.parse::<i64>().is_err() {
+                    all_int_big = false;
+                }
+                if all_numeric && s.parse::<f64>().is_err() {
+                    all_numeric = false;
+                }
+                if str_timestamptz && !is_timestamptz_str(s) {
+                    str_timestamptz = false;
+                }
+                if str_timestamp && !is_timestamp_str(s) {
+                    str_timestamp = false;
+                }
+                if all_datetime && !is_date_str(s) {
+                    all_datetime = false;
+                }
+                if str_jsonb && !is_jsonb_str(s) {
+                    str_jsonb = false;
+                }
+
                 max_len = max_len.max(s.len());
                 count += 1;
                 s.as_str()
@@ -178,34 +196,6 @@ fn infer_col_type(cells: &[Data]) -> ColumnMeta {
                 continue;
             }
         };
-
-        if str_uuid && !is_uuid(s) {
-            str_uuid = false;
-        }
-        if str_bool && !is_boolean_str(s) {
-            str_bool = false;
-        }
-        if str_int && s.parse::<i32>().is_err() {
-            str_int = false;
-        }
-        if str_bigint && s.parse::<i64>().is_err() {
-            str_bigint = false;
-        }
-        if str_float && s.parse::<f64>().is_err() {
-            str_float = false;
-        }
-        if str_timestamptz && !is_timestamptz_str(s) {
-            str_timestamptz = false;
-        }
-        if str_timestamp && !is_timestamp_str(s) {
-            str_timestamp = false;
-        }
-        if str_date && !is_date_str(s) {
-            str_date = false;
-        }
-        if str_jsonb && !is_jsonb_str(s) {
-            str_jsonb = false;
-        }
     }
 
     if count == 0 {
@@ -216,7 +206,7 @@ fn infer_col_type(cells: &[Data]) -> ColumnMeta {
         return ColumnMeta::of("boolean");
     }
     if all_datetime {
-        return ColumnMeta::of("timestamp");
+        return ColumnMeta::of("date");
     }
     if all_int_i32 {
         return ColumnMeta::of("integer");
@@ -232,26 +222,11 @@ fn infer_col_type(cells: &[Data]) -> ColumnMeta {
         if str_uuid {
             return ColumnMeta::of("uuid");
         }
-        if str_bool {
-            return ColumnMeta::of("boolean");
-        }
-        if str_int {
-            return ColumnMeta::of("integer");
-        }
-        if str_bigint {
-            return ColumnMeta::of("bigint");
-        }
-        if str_float {
-            return ColumnMeta::of("double precision");
-        }
         if str_timestamptz {
             return ColumnMeta::of("timestamptz");
         }
         if str_timestamp {
             return ColumnMeta::of("timestamp");
-        }
-        if str_date {
-            return ColumnMeta::of("date");
         }
         if str_jsonb {
             return ColumnMeta::of("jsonb");

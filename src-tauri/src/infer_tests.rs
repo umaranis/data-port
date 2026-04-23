@@ -31,20 +31,27 @@ fn native_bool_is_boolean() {
 
 #[test]
 fn native_datetime_is_timestamp() {
+    println!("{:?}", ExcelDateTime::default());
     assert_eq!(
         infer_col_type(&[Data::DateTime(ExcelDateTime::default())]),
-        col("timestamp")
+        col("date")
     );
 }
 
 #[test]
 fn native_int_fits_i32_is_integer() {
-    assert_eq!(infer_col_type(&[Data::Int(1), Data::Int(100)]), col("integer"));
+    assert_eq!(
+        infer_col_type(&[Data::Int(1), Data::Int(100)]),
+        col("integer")
+    );
 }
 
 #[test]
 fn native_int_exceeds_i32_is_bigint() {
-    assert_eq!(infer_col_type(&[Data::Int(i32::MAX as i64 + 1)]), col("bigint"));
+    assert_eq!(
+        infer_col_type(&[Data::Int(i32::MAX as i64 + 1)]),
+        col("bigint")
+    );
 }
 
 #[test]
@@ -92,12 +99,18 @@ fn string_large_integers_are_bigint() {
 
 #[test]
 fn string_floats_are_double_precision() {
-    assert_eq!(infer_col_type(&[s("1.5"), s("3.14")]), col("double precision"));
+    assert_eq!(
+        infer_col_type(&[s("1.5"), s("3.14")]),
+        col("double precision")
+    );
 }
 
 #[test]
 fn string_timestamptz_is_timestamptz() {
-    assert_eq!(infer_col_type(&[s("2024-01-15T10:30:00Z")]), col("timestamptz"));
+    assert_eq!(
+        infer_col_type(&[s("2024-01-15T10:30:00Z")]),
+        col("timestamptz")
+    );
     assert_eq!(
         infer_col_type(&[s("2024-01-15T10:30:00+05:00")]),
         col("timestamptz")
@@ -106,13 +119,22 @@ fn string_timestamptz_is_timestamptz() {
 
 #[test]
 fn string_timestamp_is_timestamp() {
-    assert_eq!(infer_col_type(&[s("2024-01-15T10:30:00")]), col("timestamp"));
-    assert_eq!(infer_col_type(&[s("2024-01-15 10:30:00")]), col("timestamp"));
+    assert_eq!(
+        infer_col_type(&[s("2024-01-15T10:30:00")]),
+        col("timestamp")
+    );
+    assert_eq!(
+        infer_col_type(&[s("2024-01-15 10:30:00")]),
+        col("timestamp")
+    );
 }
 
 #[test]
 fn string_dates_are_date() {
-    assert_eq!(infer_col_type(&[s("2024-01-15"), s("1999-12-31")]), col("date"));
+    assert_eq!(
+        infer_col_type(&[s("2024-01-15"), s("1999-12-31")]),
+        col("date")
+    );
 }
 
 #[test]

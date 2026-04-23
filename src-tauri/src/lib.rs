@@ -236,6 +236,7 @@ async fn pg_insert_rows(
     path: String,
     sheet: String,
     table_name: String,
+    column_types: Vec<String>,
     header_row: usize,
     skip_rows: Vec<usize>,
     cache: tauri::State<'_, SheetCache>,
@@ -286,8 +287,17 @@ async fn pg_insert_rows(
         .collect::<Vec<_>>()
         .join(", ");
 
-    let placeholders = (1..=headers.len())
-        .map(|i| format!("${i}"))
+    let is_text = |t: &str| matches!(t, "text" | "varchar");
+
+    let placeholders = (0..headers.len())
+        .map(|i| {
+            let pg_type = column_types.get(i).map(|s| s.as_str()).unwrap_or("text");
+            if is_text(pg_type) {
+                format!("${}", i + 1)
+            } else {
+                format!("${}::{}", i + 1, pg_type)
+            }
+        })
         .collect::<Vec<_>>()
         .join(", ");
 
@@ -299,11 +309,19 @@ async fn pg_insert_rows(
         .await
         .map_err(|e| full_error(&e))?;
 
-    let stmt = tx.prepare(&insert_sql).await.map_err(|e| full_error(&e))?;
+    let text_types = vec![tokio_postgres::types::Type::TEXT; headers.len()];
+    let stmt = tx
+        .prepare_typed(&insert_sql, &text_types)
+        .await
+        .map_err(|e| full_error(&e))?;
 
     for row in &data_rows {
-        let params: Vec<String> = (0..headers.len())
-            .map(|i| row.get(i).cloned().unwrap_or_default())
+        let params: Vec<Option<String>> = (0..headers.len())
+            .map(|i| {
+                let val = row.get(i).cloned().unwrap_or_default();
+                let pg_type = column_types.get(i).map(|s| s.as_str()).unwrap_or("text");
+                if val.is_empty() && !is_text(pg_type) { None } else { Some(val) }
+            })
             .collect();
         let params_ref: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> =
             params.iter().map(|s| s as _).collect();
