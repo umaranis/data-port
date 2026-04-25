@@ -5,6 +5,8 @@ export type MockConfig = {
   pgConnectDelay?: number;
   /** Path returned by the file-open dialog. Omit or set null to simulate cancel. */
   selectedFile?: string | null;
+  /** Rows returned by get_sheet_rows_paged_filtered. Row 0 is the header row. */
+  sheetRows?: string[][];
 };
 
 export async function mockTauriIpc(page: Page, config: MockConfig = {}) {
@@ -23,7 +25,10 @@ export async function mockTauriIpc(page: Page, config: MockConfig = {}) {
 
           case "get_sheet_rows_paged":
           case "get_sheet_rows_paged_filtered":
-            return Promise.resolve({ rows: [], total: 0 });
+            return Promise.resolve({
+              rows: cfg.sheetRows ?? [],
+              total_rows: Math.max(0, (cfg.sheetRows?.length ?? 1) - 1),
+            });
 
           case "pg_get_tables":
             return Promise.resolve([]);
