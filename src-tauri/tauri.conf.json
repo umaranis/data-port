@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "data-port",
+        "title": "Data Port",
         "width": 800,
         "height": 600
       }
