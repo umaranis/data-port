@@ -1,5 +1,11 @@
 <script lang="ts">
-  import { PG_TYPES, TYPE_MODIFIERS, type ColumnMeta } from "$lib/pgTypes";
+  import {
+    PG_TYPES,
+    TYPE_MODIFIERS,
+    type ColumnMeta,
+    type PgType,
+  } from "$lib/pgTypes";
+  import * as Select from "$lib/components/ui/select";
 
   type Props = { meta: ColumnMeta };
   let { meta }: Props = $props();
@@ -13,14 +19,22 @@
     bind:value={meta.name}
     class="text-xs font-normal border rounded px-1 py-0.5 w-full dark:bg-gray-800 dark:border-gray-600"
   />
-  <select
-    bind:value={meta.type}
-    class="text-xs font-normal border rounded px-1 py-0.5 bg-white dark:bg-gray-800 dark:border-gray-600 cursor-pointer"
+  <Select.Root
+    type="single"
+    value={meta.type}
+    onValueChange={(v) => {
+      meta.type = v as PgType;
+    }}
   >
-    {#each PG_TYPES as type}
-      <option value={type}>{type}</option>
-    {/each}
-  </select>
+    <Select.Trigger size="sm" class="text-xs h-auto py-0.5 w-full font-normal">
+      {meta.type}
+    </Select.Trigger>
+    <Select.Content>
+      {#each PG_TYPES as type}
+        <Select.Item value={type} class="text-xs">{type}</Select.Item>
+      {/each}
+    </Select.Content>
+  </Select.Root>
   {#if modifiers.length}
     <input
       type="number"
