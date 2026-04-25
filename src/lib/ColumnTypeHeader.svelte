@@ -22,7 +22,7 @@
   <Select.Root
     type="single"
     value={meta.type}
-    onValueChange={(v) => {
+    onValueChange={(v: string) => {
       meta.type = v as PgType;
     }}
   >

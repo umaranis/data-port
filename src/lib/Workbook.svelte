@@ -1,6 +1,7 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
   import * as Tabs from "$lib/components/ui/tabs";
+  import * as Select from "$lib/components/ui/select";
   import Sheet from "$lib/Sheet.svelte";
 
   export type SheetAction = "create" | "append" | "recreate" | "skip";
@@ -62,15 +63,28 @@
           <div class="flex items-center">
             <Tabs.Trigger value={sheet} class="py-2 px-4">
               {sheet}
-              <select
-                bind:value={sheetActions[sheet]}
-                onclick={(e) => e.stopPropagation()}
-                class="ml-1 text-xs border rounded px-1 py-0.5 dark:bg-gray-800 dark:border-gray-600 cursor-pointer"
+              <Select.Root
+                type="single"
+                value={sheetActions[sheet]}
+                onValueChange={(v) => {
+                  sheetActions[sheet] = v as SheetAction;
+                }}
               >
-                {#each SHEET_ACTIONS as action}
-                  <option value={action.value}>{action.label}</option>
-                {/each}
-              </select>
+                <Select.Trigger
+                  size="sm"
+                  class="ml-1 text-xs h-auto py-0.5 font-normal"
+                  onclick={(e) => e.stopPropagation()}
+                >
+                  {SHEET_ACTIONS.find((a) => a.value === sheetActions[sheet])?.label}
+                </Select.Trigger>
+                <Select.Content>
+                  {#each SHEET_ACTIONS as action}
+                    <Select.Item value={action.value} class="text-xs">
+                      {action.label}
+                    </Select.Item>
+                  {/each}
+                </Select.Content>
+              </Select.Root>
             </Tabs.Trigger>
           </div>
         {/each}
