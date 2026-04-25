@@ -3,6 +3,8 @@ import { type Page } from "@playwright/test";
 export type MockConfig = {
   pgConnectFails?: boolean;
   pgConnectDelay?: number;
+  /** Path returned by the file-open dialog. Omit or set null to simulate cancel. */
+  selectedFile?: string | null;
 };
 
 export async function mockTauriIpc(page: Page, config: MockConfig = {}) {
@@ -27,7 +29,7 @@ export async function mockTauriIpc(page: Page, config: MockConfig = {}) {
             return Promise.resolve([]);
 
           case "plugin:dialog|open":
-            return Promise.resolve(null);
+            return Promise.resolve(cfg.selectedFile ?? null);
 
           case "pg_connect":
             if (cfg.pgConnectFails) {
