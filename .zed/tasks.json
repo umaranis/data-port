@@ -1,7 +1,7 @@
 [
   {
     "label": "Run dev server",
-    "command": "pn tauri dev",
+    "command": "pnpm tauri dev",
     // "cwd": "$ZED_WORKTREE_ROOT",
     "reveal": "never",
   },

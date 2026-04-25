@@ -6,6 +6,7 @@ use crate::SheetCache;
 pub struct ColumnMeta {
     #[serde(rename = "type")]
     pub pg_type: &'static str,
+    pub name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub length: Option<u32>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -18,6 +19,7 @@ impl ColumnMeta {
     fn of(pg_type: &'static str) -> Self {
         ColumnMeta {
             pg_type,
+            name: String::new(),
             length: None,
             precision: None,
             scale: None,
@@ -27,6 +29,7 @@ impl ColumnMeta {
     fn varchar(length: u32) -> Self {
         ColumnMeta {
             pg_type: "varchar",
+            name: String::new(),
             length: Some(length),
             precision: None,
             scale: None,
@@ -263,9 +266,14 @@ pub fn infer_column_types(
     let range = cache.get_range(path, sheet)?;
     let mut all_rows = range.rows();
 
-    for _ in 0..=header_row {
+    for _ in 0..header_row {
         all_rows.next();
     }
+
+    let headers: Vec<String> = all_rows
+        .next()
+        .map(|r| r.iter().map(crate::cell_to_string).collect())
+        .unwrap_or_default();
 
     let skip_set: std::collections::HashSet<usize> = skip_rows.into_iter().collect();
 
@@ -275,7 +283,15 @@ pub fn infer_column_types(
         .map(|(_, row)| row.to_vec())
         .collect();
 
-    Ok(infer_types_from_rows(&data_rows))
+    let mut metas = infer_types_from_rows(&data_rows);
+    for (i, meta) in metas.iter_mut().enumerate() {
+        let header = headers.get(i).map(|s| s.as_str()).unwrap_or("");
+        meta.name = header.to_lowercase().replace(' ', "_");
+        if meta.name.is_empty() {
+            meta.name = format!("column_{}", i + 1);
+        }
+    }
+    Ok(metas)
 }
 
 #[cfg(test)]

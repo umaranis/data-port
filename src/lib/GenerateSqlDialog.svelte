@@ -45,7 +45,7 @@
   let sql = $derived.by(() => {
     if (!tableName || columnHeaders.length === 0) return "";
     const cols = columnHeaders.map((h, i) => {
-      const name = h || `col_${i + 1}`;
+      const name = columnMeta[i]?.name || h.replaceAll(" ", "_") || `col_${i + 1}`;
       const type = pgTypeStr(columnMeta[i] ?? { type: "text" });
       return `  "${name}" ${type}`;
     });

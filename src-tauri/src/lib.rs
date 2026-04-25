@@ -237,6 +237,7 @@ async fn pg_insert_rows(
     sheet: String,
     table_name: String,
     column_types: Vec<String>,
+    column_names: Vec<String>,
     header_row: usize,
     skip_rows: Vec<usize>,
     cache: tauri::State<'_, SheetCache>,
@@ -281,7 +282,19 @@ async fn pg_insert_rows(
         format!("\"{}\"", table_name)
     };
 
-    let col_list = headers
+    // Use custom column names if provided and matching; fall back to sheet headers.
+    let db_columns: Vec<&str> = (0..headers.len())
+        .map(|i| {
+            let custom = column_names.get(i).map(|s| s.as_str()).unwrap_or("");
+            if custom.is_empty() {
+                headers[i].as_str()
+            } else {
+                custom
+            }
+        })
+        .collect();
+
+    let col_list = db_columns
         .iter()
         .map(|h| format!("\"{}\"", h))
         .collect::<Vec<_>>()
@@ -320,7 +333,11 @@ async fn pg_insert_rows(
             .map(|i| {
                 let val = row.get(i).cloned().unwrap_or_default();
                 let pg_type = column_types.get(i).map(|s| s.as_str()).unwrap_or("text");
-                if val.is_empty() && !is_text(pg_type) { None } else { Some(val) }
+                if val.is_empty() && !is_text(pg_type) {
+                    None
+                } else {
+                    Some(val)
+                }
             })
             .collect();
         let params_ref: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> =

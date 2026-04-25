@@ -38,7 +38,10 @@
 
   let sqlDialog = $state<GenerateSqlDialog | null>(null);
 
-  type InsertStatus = { ok: true; count: number } | { ok: false; error: string } | null;
+  type InsertStatus =
+    | { ok: true; count: number }
+    | { ok: false; error: string }
+    | null;
   let insertStatus = $state<InsertStatus>(null);
   let inserting = $state(false);
 
@@ -53,6 +56,7 @@
         sheet,
         tableName: targetTable,
         columnTypes: columnMeta.map((m) => m.type),
+        columnNames: columnMeta.map((m, i) => m.name),
         headerRow,
         skipRows,
       });
@@ -68,7 +72,9 @@
 {#if sheetAction === "create" || sheetAction === "recreate"}
   <div class="flex flex-col gap-1">
     <div class="flex items-center gap-2">
-      <label for="table-name" class="text-sm whitespace-nowrap">Table name:</label>
+      <label for="table-name" class="text-sm whitespace-nowrap"
+        >Table name:</label
+      >
       <input
         id="table-name"
         type="text"
@@ -94,8 +100,14 @@
       </Button>
     </div>
     {#if insertStatus}
-      <p class="text-xs px-1 {insertStatus.ok ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}">
-        {insertStatus.ok ? `${insertStatus.count} rows inserted.` : insertStatus.error}
+      <p
+        class="text-xs px-1 {insertStatus.ok
+          ? 'text-green-700 dark:text-green-400'
+          : 'text-red-700 dark:text-red-400'}"
+      >
+        {insertStatus.ok
+          ? `${insertStatus.count} rows inserted.`
+          : insertStatus.error}
       </p>
     {/if}
   </div>
@@ -110,7 +122,9 @@
 {:else if sheetAction === "append"}
   <div class="flex flex-col gap-1">
     <div class="flex items-center gap-2">
-      <label for="append-table" class="text-sm whitespace-nowrap">Append to table:</label>
+      <label for="append-table" class="text-sm whitespace-nowrap"
+        >Append to table:</label
+      >
       {#if dbTables.length === 0}
         <span class="text-sm text-gray-400">No tables found</span>
       {:else}
@@ -135,8 +149,14 @@
       </Button>
     </div>
     {#if insertStatus}
-      <p class="text-xs px-1 {insertStatus.ok ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}">
-        {insertStatus.ok ? `${insertStatus.count} rows inserted.` : insertStatus.error}
+      <p
+        class="text-xs px-1 {insertStatus.ok
+          ? 'text-green-700 dark:text-green-400'
+          : 'text-red-700 dark:text-red-400'}"
+      >
+        {insertStatus.ok
+          ? `${insertStatus.count} rows inserted.`
+          : insertStatus.error}
       </p>
     {/if}
   </div>
