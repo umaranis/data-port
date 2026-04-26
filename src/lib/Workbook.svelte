@@ -25,6 +25,7 @@
   let selectedSheet = $state<string | null>(null);
   let sheetActions = $state<Record<string, SheetAction>>({});
   let error = $state<string | null>(null);
+  let view = $state<"data" | "mapping">("data");
 
   $effect(() => {
     sheets = [];
@@ -50,6 +51,7 @@
 
 {#if sheets.length > 0}
   <div class="mt-4 w-full border rounded-lg p-2">
+
     <Tabs.Root
       value={selectedSheet ?? undefined}
       onValueChange={(s) => (selectedSheet = s)}
@@ -90,8 +92,21 @@
         {/each}
       </Tabs.List>
     </Tabs.Root>
-    <div class="mt-0 border rounded-lg">
-      <Sheet {filePath} sheet={selectedSheet} sheetAction={sheetActions[selectedSheet ?? ""] ?? "create"} {dbTables} savedConnString={connString} />
+    <div class="mt-2 flex justify-end px-1">
+      <div class="inline-flex rounded-md border text-xs overflow-hidden">
+        <button
+          class="px-3 py-1 {view === 'data' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}"
+          onclick={() => (view = "data")}
+        >Data</button>
+        <div class="w-px bg-border"></div>
+        <button
+          class="px-3 py-1 {view === 'mapping' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}"
+          onclick={() => (view = "mapping")}
+        >Mapping</button>
+      </div>
+    </div>
+    <div class="mt-1 border rounded-lg">
+      <Sheet {filePath} sheet={selectedSheet} sheetAction={sheetActions[selectedSheet ?? ""] ?? "create"} {dbTables} savedConnString={connString} {view} />
     </div>
   </div>
 {/if}

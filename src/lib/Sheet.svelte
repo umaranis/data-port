@@ -10,6 +10,7 @@
   import ColumnTypeHeader from "./ColumnTypeHeader.svelte";
   import { type SheetAction } from "$lib/Workbook.svelte";
   import SheetActionOptions from "$lib/SheetActionOptions.svelte";
+  import SheetTableMapping from "$lib/SheetTableMapping.svelte";
 
   const PAGE_SIZE = 50;
 
@@ -19,9 +20,10 @@
     sheetAction: SheetAction;
     dbTables: string[];
     savedConnString?: string | null;
+    view?: "data" | "mapping";
   };
 
-  let { filePath, sheet, sheetAction, dbTables, savedConnString }: Props = $props();
+  let { filePath, sheet, sheetAction, dbTables, savedConnString, view = "data" }: Props = $props();
 
   let tableName = $state("");
   let selectedTable = $state("");
@@ -145,39 +147,43 @@
     />
   </div>
 
-  <div class="mt-2 overflow-x-auto">
-    <Table.Root>
-      <Table.Header>
-        <Table.Row>
-          {#each rows[0] as _, i}
-            <Table.Head class="border align-top bg-gray-100 dark:bg-gray-900">
-              <ColumnTypeHeader meta={columnMeta[i]} />
-            </Table.Head>
-          {/each}
-        </Table.Row>
-        <Table.Row>
-          {#each rows[0] as cell}
-            <Table.Head
-              class="border whitespace-nowrap bg-gray-50 dark:bg-gray-950 font-semibold"
-              >{cell}</Table.Head
-            >
-          {/each}
-        </Table.Row>
-      </Table.Header>
-      <Table.Body>
-        {#each rows.slice(1) as row}
+  {#if view === "mapping"}
+    <SheetTableMapping columnHeaders={rows[0] ?? []} {columnMeta} />
+  {:else}
+    <div class="mt-2 overflow-x-auto">
+      <Table.Root>
+        <Table.Header>
           <Table.Row>
-            {#each row as cell}
-              <Table.Cell class="whitespace-nowrap border">{cell}</Table.Cell>
+            {#each rows[0] as _, i}
+              <Table.Head class="border align-top bg-gray-100 dark:bg-gray-900">
+                <ColumnTypeHeader meta={columnMeta[i]} />
+              </Table.Head>
             {/each}
           </Table.Row>
-        {/each}
-      </Table.Body>
-    </Table.Root>
-  </div>
-  <div class="pr-2 float-right">
-    <Paging {currentPage} {totalPages} {totalRows} onpage={goToPage} />
-  </div>
+          <Table.Row>
+            {#each rows[0] as cell}
+              <Table.Head
+                class="border whitespace-nowrap bg-gray-50 dark:bg-gray-950 font-semibold"
+                >{cell}</Table.Head
+              >
+            {/each}
+          </Table.Row>
+        </Table.Header>
+        <Table.Body>
+          {#each rows.slice(1) as row}
+            <Table.Row>
+              {#each row as cell}
+                <Table.Cell class="whitespace-nowrap border">{cell}</Table.Cell>
+              {/each}
+            </Table.Row>
+          {/each}
+        </Table.Body>
+      </Table.Root>
+    </div>
+    <div class="pr-2 float-right">
+      <Paging {currentPage} {totalPages} {totalRows} onpage={goToPage} />
+    </div>
+  {/if}
 {/if}
 
 <ConfirmClearSkipRows
