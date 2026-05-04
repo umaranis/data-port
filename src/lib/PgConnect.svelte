@@ -62,7 +62,7 @@
   onclick={(e) => {
     if (e.target === dialog) close();
   }}
-  class="rounded-xl shadow-2xl p-0 backdrop:bg-black/40 w-full max-w-md"
+  class="rounded-xl shadow-2xl p-0 backdrop:bg-black/40 w-full max-w-md bg-white dark:bg-gray-900 dark:text-gray-100"
 >
   <form
     onsubmit={(e) => {
@@ -166,7 +166,7 @@
         >Connection string</span
       >
       <code
-        class="text-xs bg-gray-100 dark:bg-gray-800 rounded-lg px-3 py-2 break-all select-all"
+        class="text-xs bg-gray-100 dark:bg-gray-800 dark:text-gray-300 rounded-lg px-3 py-2 break-all select-all"
         >{connString}</code
       >
     </div>
