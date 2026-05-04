@@ -21,7 +21,14 @@
     view?: "data" | "mapping";
   };
 
-  let { filePath, sheet, sheetAction, dbTables, savedConnString, view = "data" }: Props = $props();
+  let {
+    filePath,
+    sheet,
+    sheetAction,
+    dbTables,
+    savedConnString,
+    view = "data",
+  }: Props = $props();
 
   let tableName = $state("");
   let selectedTable = $state("");
