@@ -368,6 +368,34 @@ async fn pg_execute(conn_string: String, sql: String) -> Result<(), String> {
 }
 
 #[tauri::command]
+async fn pg_get_columns(conn_string: String, table_name: String) -> Result<Vec<String>, String> {
+  let (schema, table) = if let Some(dot) = table_name.find('.') {
+    (
+      table_name[..dot].to_string(),
+      table_name[dot + 1..].to_string(),
+    )
+  } else {
+    ("public".to_string(), table_name)
+  };
+  let (client, connection) = tokio_postgres::connect(&conn_string, NoTls)
+    .await
+    .map_err(|e| full_error(&e))?;
+  tokio::spawn(async move {
+    let _ = connection.await;
+  });
+  let rows = client
+    .query(
+      "SELECT column_name FROM information_schema.columns \
+             WHERE table_schema = $1 AND table_name = $2 \
+             ORDER BY ordinal_position",
+      &[&schema, &table],
+    )
+    .await
+    .map_err(|e| full_error(&e))?;
+  Ok(rows.iter().map(|r| r.get::<_, String>(0)).collect())
+}
+
+#[tauri::command]
 fn clear_cache(cache: tauri::State<SheetCache>) {
   cache.0.lock().unwrap().clear();
 }
@@ -388,7 +416,8 @@ pub fn run() {
       pg_connect,
       pg_get_tables,
       pg_execute,
-      pg_insert_rows
+      pg_insert_rows,
+      pg_get_columns
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
