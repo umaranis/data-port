@@ -62,7 +62,7 @@
   onclick={(e) => {
     if (e.target === dialog) close();
   }}
-  class="rounded-xl shadow-2xl p-0 backdrop:bg-black/40 w-full max-w-md bg-white dark:bg-gray-900 dark:text-gray-100"
+  class="rounded-xl shadow-2xl p-0 backdrop:bg-black/40 w-full max-w-md bg-white dark:bg-gray-900 dark:text-gray-100 m-auto"
 >
   <form
     onsubmit={(e) => {

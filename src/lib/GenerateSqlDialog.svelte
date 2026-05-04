@@ -88,7 +88,7 @@
   onclick={(e) => {
     if (e.target === dialog) close();
   }}
-  class="rounded-xl shadow-2xl p-0 backdrop:bg-black/40 w-full max-w-2xl"
+  class="rounded-xl shadow-2xl p-0 backdrop:bg-black/40 w-full max-w-2xl m-auto bg-white dark:bg-gray-900 dark:text-gray-100"
 >
   <div class="flex flex-col gap-4 p-6">
     <h2 class="text-lg font-semibold">Create Table SQL</h2>
