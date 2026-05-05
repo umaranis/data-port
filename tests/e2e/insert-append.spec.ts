@@ -48,6 +48,14 @@ async function switchToAppend(page: Page) {
   await page.getByRole("option", { name: "append table" }).click();
 }
 
+async function fillColumnNames(page: Page, names: string[]) {
+  await page.getByRole("button", { name: "Mapping" }).click();
+  const inputs = page.getByRole("table").locator('input[type="text"]');
+  for (let i = 0; i < names.length; i++) {
+    await inputs.nth(i).fill(names[i]);
+  }
+}
+
 test.describe("append insert flow", () => {
   test.beforeEach(async ({ page }) => {
     await setup(page);
@@ -62,12 +70,14 @@ test.describe("append insert flow", () => {
 
   test("inserts rows and shows success count", async ({ page }) => {
     await switchToAppend(page);
+    await fillColumnNames(page, ["id", "name", "department"]);
     await page.getByRole("button", { name: "Insert rows" }).click();
     await expect(page.getByText("2 rows inserted.")).toBeVisible();
   });
 
   test("pg_insert_rows receives correct columnNames", async ({ page }) => {
     await switchToAppend(page);
+    await fillColumnNames(page, ["id", "name", "department"]);
     await page.getByRole("button", { name: "Insert rows" }).click();
     await expect(page.getByText("2 rows inserted.")).toBeVisible();
 
@@ -77,8 +87,7 @@ test.describe("append insert flow", () => {
     });
 
     expect(call).toBeDefined();
-    // No explicit mapping set, so each name falls back to "" and Rust uses the sheet header.
-    expect(call.columnNames).toEqual(["", "", ""]);
+    expect(call.columnNames).toEqual(["id", "name", "department"]);
     expect(call.tableName).toBe(DB_TABLE);
   });
 

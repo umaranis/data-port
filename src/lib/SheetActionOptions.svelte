@@ -54,6 +54,14 @@
 
   async function insertRows(targetTable: string) {
     if (!filePath || !sheet || !savedConnString || !targetTable) return;
+    const columnNames = columnMeta.map((m) => m.name ?? "");
+    if (columnNames.some((n) => n === "")) {
+      insertStatus = {
+        ok: false,
+        error: "All column names must be set before inserting.",
+      };
+      return;
+    }
     inserting = true;
     insertStatus = null;
     try {
@@ -63,7 +71,7 @@
         sheet,
         tableName: targetTable,
         columnTypes: columnMeta.map((m) => m.type),
-        columnNames: columnMeta.map((m) => m.name ?? ""),
+        columnNames,
         headerRow,
         skipRows,
       });
