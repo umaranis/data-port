@@ -12,6 +12,88 @@ pub fn full_error(e: &dyn std::error::Error) -> String {
   msg
 }
 
+fn quote_table(name: &str) -> String {
+  if let Some(dot) = name.find('.') {
+    format!("\"{}\".\"{}\"", &name[..dot], &name[dot + 1..])
+  } else {
+    format!("\"{}\"", name)
+  }
+}
+
+async fn execute_insert(
+  client: &mut tokio_postgres::Client,
+  table_name: &str,
+  column_names: &[String],
+  column_types: &[String],
+  headers: &[String],
+  data_rows: &[Vec<String>],
+) -> Result<usize, String> {
+  if data_rows.is_empty() {
+    return Ok(0);
+  }
+
+  let quoted_table = quote_table(table_name);
+
+  let db_columns: Vec<&str> = (0..headers.len())
+    .map(|i| {
+      let custom = column_names.get(i).map(|s| s.as_str()).unwrap_or("");
+      if custom.is_empty() { headers[i].as_str() } else { custom }
+    })
+    .collect();
+
+  let col_list = db_columns
+    .iter()
+    .map(|h| format!("\"{}\"", h))
+    .collect::<Vec<_>>()
+    .join(", ");
+
+  let is_text = |t: &str| matches!(t, "text" | "varchar");
+
+  let placeholders = (0..headers.len())
+    .map(|i| {
+      let pg_type = column_types.get(i).map(|s| s.as_str()).unwrap_or("text");
+      if is_text(pg_type) {
+        format!("${}", i + 1)
+      } else {
+        format!("${}::{}", i + 1, pg_type)
+      }
+    })
+    .collect::<Vec<_>>()
+    .join(", ");
+
+  let insert_sql = format!("INSERT INTO {quoted_table} ({col_list}) VALUES ({placeholders})");
+
+  let tx = client
+    .build_transaction()
+    .start()
+    .await
+    .map_err(|e| full_error(&e))?;
+
+  let text_types = vec![tokio_postgres::types::Type::TEXT; headers.len()];
+  let stmt = tx
+    .prepare_typed(&insert_sql, &text_types)
+    .await
+    .map_err(|e| full_error(&e))?;
+
+  for row in data_rows {
+    let params: Vec<Option<String>> = (0..headers.len())
+      .map(|i| {
+        let val = row.get(i).cloned().unwrap_or_default();
+        let pg_type = column_types.get(i).map(|s| s.as_str()).unwrap_or("text");
+        if val.is_empty() && !is_text(pg_type) { None } else { Some(val) }
+      })
+      .collect();
+    let params_ref: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> =
+      params.iter().map(|s| s as _).collect();
+    tx.execute(&stmt, &params_ref)
+      .await
+      .map_err(|e| full_error(&e))?;
+  }
+
+  tx.commit().await.map_err(|e| full_error(&e))?;
+  Ok(data_rows.len())
+}
+
 #[tauri::command]
 pub async fn pg_get_tables(conn_string: String) -> Result<Vec<String>, String> {
   let (client, connection) = tokio_postgres::connect(&conn_string, NoTls)
@@ -92,10 +174,6 @@ pub async fn pg_insert_rows(
     .map(|(_, row)| row.iter().map(cell_to_string).collect())
     .collect();
 
-  if data_rows.is_empty() {
-    return Ok(0);
-  }
-
   let (mut client, connection) = tokio_postgres::connect(&conn_string, NoTls)
     .await
     .map_err(|e| full_error(&e))?;
@@ -103,80 +181,7 @@ pub async fn pg_insert_rows(
     let _ = connection.await;
   });
 
-  let quoted_table = if let Some(dot) = table_name.find('.') {
-    format!("\"{}\".\"{}\"", &table_name[..dot], &table_name[dot + 1..])
-  } else {
-    format!("\"{}\"", table_name)
-  };
-
-  // Use custom column names if provided and matching; fall back to sheet headers.
-  let db_columns: Vec<&str> = (0..headers.len())
-    .map(|i| {
-      let custom = column_names.get(i).map(|s| s.as_str()).unwrap_or("");
-      if custom.is_empty() {
-        headers[i].as_str()
-      } else {
-        custom
-      }
-    })
-    .collect();
-
-  let col_list = db_columns
-    .iter()
-    .map(|h| format!("\"{}\"", h))
-    .collect::<Vec<_>>()
-    .join(", ");
-
-  let is_text = |t: &str| matches!(t, "text" | "varchar");
-
-  let placeholders = (0..headers.len())
-    .map(|i| {
-      let pg_type = column_types.get(i).map(|s| s.as_str()).unwrap_or("text");
-      if is_text(pg_type) {
-        format!("${}", i + 1)
-      } else {
-        format!("${}::{}", i + 1, pg_type)
-      }
-    })
-    .collect::<Vec<_>>()
-    .join(", ");
-
-  let insert_sql = format!("INSERT INTO {quoted_table} ({col_list}) VALUES ({placeholders})");
-
-  let tx = client
-    .build_transaction()
-    .start()
-    .await
-    .map_err(|e| full_error(&e))?;
-
-  let text_types = vec![tokio_postgres::types::Type::TEXT; headers.len()];
-  let stmt = tx
-    .prepare_typed(&insert_sql, &text_types)
-    .await
-    .map_err(|e| full_error(&e))?;
-
-  for row in &data_rows {
-    let params: Vec<Option<String>> = (0..headers.len())
-      .map(|i| {
-        let val = row.get(i).cloned().unwrap_or_default();
-        let pg_type = column_types.get(i).map(|s| s.as_str()).unwrap_or("text");
-        if val.is_empty() && !is_text(pg_type) {
-          None
-        } else {
-          Some(val)
-        }
-      })
-      .collect();
-    let params_ref: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> =
-      params.iter().map(|s| s as _).collect();
-    tx.execute(&stmt, &params_ref)
-      .await
-      .map_err(|e| full_error(&e))?;
-  }
-
-  tx.commit().await.map_err(|e| full_error(&e))?;
-
-  Ok(data_rows.len())
+  execute_insert(&mut client, &table_name, &column_names, &column_types, &headers, &data_rows).await
 }
 
 #[tauri::command]
@@ -221,3 +226,7 @@ pub async fn pg_get_columns(conn_string: String, table_name: String) -> Result<V
     .map_err(|e| full_error(&e))?;
   Ok(rows.iter().map(|r| r.get::<_, String>(0)).collect())
 }
+
+#[cfg(test)]
+#[path = "db_tests.rs"]
+mod tests;
