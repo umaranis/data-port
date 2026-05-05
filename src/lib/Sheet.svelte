@@ -5,7 +5,7 @@
   import { type ColumnMeta } from "$lib/pgTypes";
   import { SkipRows } from "$lib/SkipRows.svelte";
   import { untrack } from "svelte";
-  import { Sheet as WorkbookSheet } from "$lib/WorkbookClass.svelte.js";
+  import { SheetClass } from "$lib/WorkbookClass.svelte.js";
   import SheetActionOptions from "$lib/SheetActionOptions.svelte";
   import SheetTableMapping from "$lib/SheetTableMapping.svelte";
   import SheetPreview from "$lib/SheetPreview.svelte";
@@ -14,7 +14,7 @@
 
   type Props = {
     filePath: string | null;
-    sheet: WorkbookSheet | null;
+    sheet: SheetClass | null;
     dbTables: string[];
     savedConnString?: string | null;
     view?: "data" | "mapping";

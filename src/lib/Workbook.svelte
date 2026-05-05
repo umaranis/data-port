@@ -3,7 +3,7 @@
   import * as Tabs from "$lib/components/ui/tabs";
   import * as Select from "$lib/components/ui/select";
   import Sheet from "$lib/Sheet.svelte";
-  import { WorkbookClass, Sheet as WorkbookSheet, type SheetAction } from "./WorkbookClass.svelte.js";
+  import { WorkbookClass, SheetClass, type SheetAction } from "./WorkbookClass.svelte.js";
 
   const SHEET_ACTIONS: { value: SheetAction; label: string }[] = [
     { value: "create", label: "create table" },
@@ -31,7 +31,7 @@
     if (!filePath) return;
     invoke<string[]>("get_sheets", { path: filePath })
       .then((names) => {
-        wb.sheets = names.map((n) => new WorkbookSheet(n));
+        wb.sheets = names.map((n) => new SheetClass(n));
         wb.selectedSheet = wb.sheets[0] ?? null;
       })
       .catch((e) => (error = String(e)));
