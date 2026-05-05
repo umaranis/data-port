@@ -52,7 +52,7 @@
   function applyFilters() {
     const newHeaderRow = Math.max(0, headerRowInput - 1);
     if (
-      newHeaderRow !== sheet.appliedHeaderRow &&
+      newHeaderRow !== sheet.headerRow &&
       (skipRows.applied.length > 0 || skipRows.input.length > 0)
     ) {
       pendingHeaderRow = newHeaderRow;
@@ -63,10 +63,10 @@
   }
 
   function commitFilters(newHeaderRow: number) {
-    if (newHeaderRow !== sheet.appliedHeaderRow) {
+    if (newHeaderRow !== sheet.headerRow) {
       skipRows.reset();
     }
-    sheet.appliedHeaderRow = newHeaderRow;
+    sheet.headerRow = newHeaderRow;
     skipRows.apply();
     currentPage = 0;
     loadPage(0);
@@ -82,7 +82,7 @@
         sheet: sheet.name,
         page,
         pageSize: PAGE_SIZE,
-        headerRow: sheet.appliedHeaderRow,
+        headerRow: sheet.headerRow,
         skipRows: skipRows.applied,
       },
     );
@@ -115,7 +115,7 @@
     rows = [];
     totalRows = 0;
     headerRowInput = 1;
-    if (sheet) sheet.appliedHeaderRow = 0;
+    if (sheet) sheet.headerRow = 0;
     skipRows.reset();
     columnMeta = [];
     untrack(() => {
@@ -132,7 +132,7 @@
       bind:tableName
       {filePath}
       sheet={sheet?.name ?? null}
-      headerRow={sheet.appliedHeaderRow}
+      headerRow={sheet.headerRow}
       skipRows={skipRows.applied}
       columnHeaders={rows[0] ?? []}
       {columnMeta}
@@ -143,7 +143,7 @@
       {filePath}
       sheet={sheet?.name ?? null}
       bind:headerRowInput
-      appliedHeaderRow={sheet.appliedHeaderRow}
+      appliedHeaderRow={sheet.headerRow}
       {skipRows}
       onapply={applyFilters}
     />
