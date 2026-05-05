@@ -13,6 +13,8 @@ export type MockConfig = {
   dbTables?: string[];
   /** Row count returned by pg_insert_rows. */
   insertedRows?: number;
+  /** Row indices returned by get_blank_rows. */
+  blankRows?: number[];
 };
 
 export async function mockTauriIpc(page: Page, config: MockConfig = {}) {
@@ -24,9 +26,11 @@ export async function mockTauriIpc(page: Page, config: MockConfig = {}) {
         (window as any).__tauriCalls__.push({ cmd, args });
         switch (cmd) {
           case "clear_cache":
-          case "get_blank_rows":
           case "infer_column_types":
             return Promise.resolve(null);
+
+          case "get_blank_rows":
+            return Promise.resolve(cfg.blankRows ?? []);
 
           case "get_sheets":
             return Promise.resolve(cfg.sheetNames ?? ["Sheet1", "Sheet2"]);
