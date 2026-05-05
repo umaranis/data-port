@@ -63,7 +63,7 @@
         sheet,
         tableName: targetTable,
         columnTypes: columnMeta.map((m) => m.type),
-        columnNames: columnMeta.map((m, i) => m.name),
+        columnNames: columnMeta.map((m) => m.name ?? ""),
         headerRow,
         skipRows,
       });

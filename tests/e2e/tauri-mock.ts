@@ -7,13 +7,21 @@ export type MockConfig = {
   selectedFile?: string | null;
   /** Rows returned by get_sheet_rows_paged_filtered. Row 0 is the header row. */
   sheetRows?: string[][];
+  /** Sheet names returned by get_sheets. Defaults to ["Sheet1", "Sheet2"]. */
+  sheetNames?: string[];
+  /** Tables returned by pg_get_tables. */
+  dbTables?: string[];
+  /** Row count returned by pg_insert_rows. */
+  insertedRows?: number;
 };
 
 export async function mockTauriIpc(page: Page, config: MockConfig = {}) {
   // Config is serialised as JSON by Playwright — only primitives allowed, no functions.
   await page.addInitScript((cfg) => {
+    (window as any).__tauriCalls__ = [] as { cmd: string; args: unknown }[];
     (window as any).__TAURI_INTERNALS__ = {
-      invoke: (cmd: string) => {
+      invoke: (cmd: string, args?: unknown) => {
+        (window as any).__tauriCalls__.push({ cmd, args });
         switch (cmd) {
           case "clear_cache":
           case "get_blank_rows":
@@ -21,7 +29,7 @@ export async function mockTauriIpc(page: Page, config: MockConfig = {}) {
             return Promise.resolve(null);
 
           case "get_sheets":
-            return Promise.resolve(["Sheet1", "Sheet2"]);
+            return Promise.resolve(cfg.sheetNames ?? ["Sheet1", "Sheet2"]);
 
           case "get_sheet_rows_paged":
           case "get_sheet_rows_paged_filtered":
@@ -31,6 +39,12 @@ export async function mockTauriIpc(page: Page, config: MockConfig = {}) {
             });
 
           case "pg_get_tables":
+            return Promise.resolve(cfg.dbTables ?? []);
+
+          case "pg_insert_rows":
+            return Promise.resolve(cfg.insertedRows ?? 0);
+
+          case "pg_get_columns":
             return Promise.resolve([]);
 
           case "plugin:dialog|open":
