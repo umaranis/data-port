@@ -3,7 +3,6 @@
   import ConfirmClearSkipRows from "$lib/ConfirmClearSkipRows.svelte";
   import SheetFilters from "$lib/SheetFilters.svelte";
   import { type ColumnMeta } from "$lib/pgTypes";
-  import { SkipRows } from "$lib/SkipRows.svelte";
   import { untrack } from "svelte";
   import { SheetClass } from "$lib/WorkbookClass.svelte.js";
   import SheetActionOptions from "$lib/SheetActionOptions.svelte";
@@ -36,8 +35,6 @@
 
   let headerRowInput = $state(1);
 
-  const skipRows = new SkipRows();
-
   let confirmDialogOpen = $state(false);
   let pendingHeaderRow = $state(0);
 
@@ -53,7 +50,7 @@
     const newHeaderRow = Math.max(0, headerRowInput - 1);
     if (
       newHeaderRow !== sheet.headerRow &&
-      (skipRows.applied.length > 0 || skipRows.input.length > 0)
+      sheet.skipRows.length > 0
     ) {
       pendingHeaderRow = newHeaderRow;
       confirmDialogOpen = true;
@@ -64,10 +61,9 @@
 
   function commitFilters(newHeaderRow: number) {
     if (newHeaderRow !== sheet.headerRow) {
-      skipRows.reset();
+      sheet.skipRows = [];
     }
     sheet.headerRow = newHeaderRow;
-    skipRows.apply();
     currentPage = 0;
     loadPage(0);
     confirmDialogOpen = false;
@@ -83,7 +79,7 @@
         page,
         pageSize: PAGE_SIZE,
         headerRow: sheet.headerRow,
-        skipRows: skipRows.applied,
+        skipRows: sheet.skipRows,
       },
     );
     rows = result.rows;
@@ -115,8 +111,7 @@
     rows = [];
     totalRows = 0;
     headerRowInput = 1;
-    if (sheet) sheet.headerRow = 0;
-    skipRows.reset();
+    if (sheet) { sheet.headerRow = 0; sheet.skipRows = []; }
     columnMeta = [];
     untrack(() => {
       loadPage(0);
@@ -133,7 +128,7 @@
       {filePath}
       sheet={sheet?.name ?? null}
       headerRow={sheet.headerRow}
-      skipRows={skipRows.applied}
+      skipRows={sheet.skipRows}
       columnHeaders={rows[0] ?? []}
       {columnMeta}
       {savedConnString}
@@ -144,7 +139,7 @@
       sheet={sheet?.name ?? null}
       bind:headerRowInput
       appliedHeaderRow={sheet.headerRow}
-      {skipRows}
+      bind:skipRows={sheet.skipRows}
       onapply={applyFilters}
     />
   </div>

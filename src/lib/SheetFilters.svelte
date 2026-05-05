@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { type SkipRows } from "$lib/SkipRows.svelte";
+  import { invoke } from "@tauri-apps/api/core";
+  import { parseSkipInput, serializeSkipInput } from "$lib/SkipRows";
   import { Button } from "$lib/components/ui/button";
 
   type Props = {
@@ -7,7 +8,7 @@
     sheet: string | null;
     headerRowInput: number;
     appliedHeaderRow: number;
-    skipRows: SkipRows;
+    skipRows: number[];
     onapply: () => void;
   };
 
@@ -16,17 +17,46 @@
     sheet,
     headerRowInput = $bindable(),
     appliedHeaderRow,
-    skipRows,
+    skipRows = $bindable(),
     onapply,
   }: Props = $props();
 
+  let input = $state("");
+  let appliedInput = $state("");
+
   let hasChanges = $derived(
-    headerRowInput !== appliedHeaderRow + 1 || skipRows.hasChanges,
+    headerRowInput !== appliedHeaderRow + 1 || input !== appliedInput,
   );
+
+  $effect(() => {
+    sheet;
+    input = "";
+    appliedInput = "";
+  });
+
+  $effect(() => {
+    if (skipRows.length === 0 && appliedInput !== "") {
+      input = "";
+      appliedInput = "";
+    }
+  });
+
+  function handleApply() {
+    skipRows = parseSkipInput(input);
+    appliedInput = input;
+    onapply();
+  }
 
   async function findBlankRows() {
     if (!filePath || !sheet) return;
-    await skipRows.findBlank(filePath, sheet, appliedHeaderRow);
+    const blank = await invoke<number[]>("get_blank_rows", {
+      path: filePath,
+      sheet,
+      headerRow: appliedHeaderRow,
+    });
+    if (blank.length === 0) return;
+    const merged = new Set([...parseSkipInput(input), ...blank]);
+    input = serializeSkipInput(merged);
   }
 </script>
 
@@ -43,7 +73,7 @@
     type="number"
     min="1"
     bind:value={headerRowInput}
-    onkeydown={(e) => e.key === "Enter" && hasChanges && onapply()}
+    onkeydown={(e) => e.key === "Enter" && hasChanges && handleApply()}
     class="border rounded px-2 py-1 text-sm w-16"
   />
   <label for="skip-rows" class="text-sm whitespace-nowrap ml-2"
@@ -52,20 +82,25 @@
   <input
     id="skip-rows"
     type="text"
-    bind:value={skipRows.input}
-    onkeydown={(e) => e.key === "Enter" && hasChanges && onapply()}
+    bind:value={input}
+    onkeydown={(e) => e.key === "Enter" && hasChanges && handleApply()}
     placeholder="e.g. 1,3,5-10"
     class="border rounded px-2 py-1 text-sm w-48"
   />
   <Button variant="outline" size="sm" onclick={findBlankRows}>
     Find blank rows
   </Button>
-  <Button variant="outline" size="sm" onclick={onapply} disabled={!hasChanges}>
+  <Button
+    variant="outline"
+    size="sm"
+    onclick={handleApply}
+    disabled={!hasChanges}
+  >
     Apply
   </Button>
-  {#if skipRows.applied.length > 0}
+  {#if skipRows.length > 0}
     <span class="text-sm text-gray-500">
-      {skipRows.applied.length} row{skipRows.applied.length !== 1 ? "s" : ""} hidden
+      {skipRows.length} row{skipRows.length !== 1 ? "s" : ""} hidden
     </span>
   {/if}
 </div>

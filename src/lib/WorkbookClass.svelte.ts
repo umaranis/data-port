@@ -9,6 +9,7 @@ export class SheetClass {
   public name: string;
   public action: SheetAction = $state("create");
   public headerRow: number = $state(0);
+  public skipRows: number[] = $state([]);
 
   constructor(name: string) {
     this.name = name;
