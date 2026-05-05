@@ -1,58 +1,73 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
   import { parseSkipInput, serializeSkipInput } from "$lib/SkipRows";
+  import { SheetClass } from "$lib/WorkbookClass.svelte.js";
+  import ConfirmClearSkipRows from "$lib/ConfirmClearSkipRows.svelte";
   import { Button } from "$lib/components/ui/button";
 
   type Props = {
     filePath: string | null;
-    sheet: string | null;
-    headerRowInput: number;
-    appliedHeaderRow: number;
-    skipRows: number[];
-    onapply: () => void;
+    sheet: SheetClass;
+    oncommit: () => void;
   };
 
-  let {
-    filePath,
-    sheet,
-    headerRowInput = $bindable(),
-    appliedHeaderRow,
-    skipRows = $bindable(),
-    onapply,
-  }: Props = $props();
+  let { filePath, sheet, oncommit }: Props = $props();
+
+  let headerRowInput = $state(1);
+  let confirmDialogOpen = $state(false);
+  let pendingHeaderRow = $state(0);
 
   let input = $state("");
   let appliedInput = $state("");
 
   let hasChanges = $derived(
-    headerRowInput !== appliedHeaderRow + 1 || input !== appliedInput,
+    headerRowInput !== sheet.headerRow + 1 || input !== appliedInput,
   );
 
   $effect(() => {
     sheet;
+    headerRowInput = 1;
     input = "";
     appliedInput = "";
   });
 
   $effect(() => {
-    if (skipRows.length === 0 && appliedInput !== "") {
+    if (sheet.skipRows.length === 0 && appliedInput !== "") {
       input = "";
       appliedInput = "";
     }
   });
 
-  function handleApply() {
-    skipRows = parseSkipInput(input);
+  function applyFilters() {
+    const newHeaderRow = Math.max(0, headerRowInput - 1);
+    const parsedSkipRows = parseSkipInput(input);
+
+    if (newHeaderRow !== sheet.headerRow && parsedSkipRows.length > 0) {
+      pendingHeaderRow = newHeaderRow;
+      confirmDialogOpen = true;
+      return;
+    }
+
+    sheet.skipRows = parsedSkipRows;
     appliedInput = input;
-    onapply();
+    commitFilters(newHeaderRow);
+  }
+
+  function commitFilters(newHeaderRow: number) {
+    if (newHeaderRow !== sheet.headerRow) {
+      sheet.skipRows = [];
+    }
+    sheet.headerRow = newHeaderRow;
+    oncommit();
+    confirmDialogOpen = false;
   }
 
   async function findBlankRows() {
-    if (!filePath || !sheet) return;
+    if (!filePath) return;
     const blank = await invoke<number[]>("get_blank_rows", {
       path: filePath,
-      sheet,
-      headerRow: appliedHeaderRow,
+      sheet: sheet.name,
+      headerRow: sheet.headerRow,
     });
     if (blank.length === 0) return;
     const merged = new Set([...parseSkipInput(input), ...blank]);
@@ -73,7 +88,7 @@
     type="number"
     min="1"
     bind:value={headerRowInput}
-    onkeydown={(e) => e.key === "Enter" && hasChanges && handleApply()}
+    onkeydown={(e) => e.key === "Enter" && hasChanges && applyFilters()}
     class="border rounded px-2 py-1 text-sm w-16"
   />
   <label for="skip-rows" class="text-sm whitespace-nowrap ml-2"
@@ -83,7 +98,7 @@
     id="skip-rows"
     type="text"
     bind:value={input}
-    onkeydown={(e) => e.key === "Enter" && hasChanges && handleApply()}
+    onkeydown={(e) => e.key === "Enter" && hasChanges && applyFilters()}
     placeholder="e.g. 1,3,5-10"
     class="border rounded px-2 py-1 text-sm w-48"
   />
@@ -93,14 +108,19 @@
   <Button
     variant="outline"
     size="sm"
-    onclick={handleApply}
+    onclick={applyFilters}
     disabled={!hasChanges}
   >
     Apply
   </Button>
-  {#if skipRows.length > 0}
+  {#if sheet.skipRows.length > 0}
     <span class="text-sm text-gray-500">
-      {skipRows.length} row{skipRows.length !== 1 ? "s" : ""} hidden
+      {sheet.skipRows.length} row{sheet.skipRows.length !== 1 ? "s" : ""} hidden
     </span>
   {/if}
 </div>
+
+<ConfirmClearSkipRows
+  bind:open={confirmDialogOpen}
+  onconfirm={() => commitFilters(pendingHeaderRow)}
+/>

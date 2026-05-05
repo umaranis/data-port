@@ -1,6 +1,5 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
-  import ConfirmClearSkipRows from "$lib/ConfirmClearSkipRows.svelte";
   import SheetFilters from "$lib/SheetFilters.svelte";
   import { type ColumnMeta } from "$lib/pgTypes";
   import { untrack } from "svelte";
@@ -33,40 +32,12 @@
   let currentPage = $state(0);
   let totalRows = $state(0);
 
-  let headerRowInput = $state(1);
-
-  let confirmDialogOpen = $state(false);
-  let pendingHeaderRow = $state(0);
-
   let columnMeta = $state<ColumnMeta[]>([]);
 
   let totalPages = $derived(Math.max(1, Math.ceil(totalRows / PAGE_SIZE)));
 
   function freshMeta(count: number): ColumnMeta[] {
     return Array.from({ length: count }, () => ({ type: "text" }));
-  }
-
-  function applyFilters() {
-    const newHeaderRow = Math.max(0, headerRowInput - 1);
-    if (
-      newHeaderRow !== sheet.headerRow &&
-      sheet.skipRows.length > 0
-    ) {
-      pendingHeaderRow = newHeaderRow;
-      confirmDialogOpen = true;
-      return;
-    }
-    commitFilters(newHeaderRow);
-  }
-
-  function commitFilters(newHeaderRow: number) {
-    if (newHeaderRow !== sheet.headerRow) {
-      sheet.skipRows = [];
-    }
-    sheet.headerRow = newHeaderRow;
-    currentPage = 0;
-    loadPage(0);
-    confirmDialogOpen = false;
   }
 
   async function loadPage(page: number) {
@@ -110,8 +81,10 @@
     currentPage = 0;
     rows = [];
     totalRows = 0;
-    headerRowInput = 1;
-    if (sheet) { sheet.headerRow = 0; sheet.skipRows = []; }
+    if (sheet) {
+      sheet.headerRow = 0;
+      sheet.skipRows = [];
+    }
     columnMeta = [];
     untrack(() => {
       loadPage(0);
@@ -136,11 +109,8 @@
     />
     <SheetFilters
       {filePath}
-      sheet={sheet?.name ?? null}
-      bind:headerRowInput
-      appliedHeaderRow={sheet.headerRow}
-      bind:skipRows={sheet.skipRows}
-      onapply={applyFilters}
+      {sheet}
+      oncommit={() => { currentPage = 0; loadPage(0); }}
     />
   </div>
 
@@ -157,8 +127,3 @@
     />
   {/if}
 {/if}
-
-<ConfirmClearSkipRows
-  bind:open={confirmDialogOpen}
-  onconfirm={() => commitFilters(pendingHeaderRow)}
-/>
