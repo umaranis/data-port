@@ -5,7 +5,7 @@
   import { type ColumnMeta } from "$lib/pgTypes";
   import { SkipRows } from "$lib/SkipRows.svelte";
   import { untrack } from "svelte";
-  import { type SheetAction } from "$lib/WorkbookClass.svelte.js";
+  import { Sheet as WorkbookSheet } from "$lib/WorkbookClass.svelte.js";
   import SheetActionOptions from "$lib/SheetActionOptions.svelte";
   import SheetTableMapping from "$lib/SheetTableMapping.svelte";
   import SheetPreview from "$lib/SheetPreview.svelte";
@@ -14,8 +14,7 @@
 
   type Props = {
     filePath: string | null;
-    sheet: string | null;
-    sheetAction: SheetAction;
+    sheet: WorkbookSheet | null;
     dbTables: string[];
     savedConnString?: string | null;
     view?: "data" | "mapping";
@@ -24,7 +23,6 @@
   let {
     filePath,
     sheet,
-    sheetAction,
     dbTables,
     savedConnString,
     view = "data",
@@ -82,7 +80,7 @@
       "get_sheet_rows_paged_filtered",
       {
         path: filePath,
-        sheet,
+        sheet: sheet.name,
         page,
         pageSize: PAGE_SIZE,
         headerRow: appliedHeaderRow,
@@ -107,7 +105,7 @@
   }
 
   $effect(() => {
-    tableName = sheet ? sheet.toLocaleLowerCase().replaceAll(" ", "_") : "";
+    tableName = sheet?.name ? sheet.name.toLocaleLowerCase().replaceAll(" ", "_") : "";
   });
 
   $effect(() => {
@@ -128,11 +126,11 @@
 {#if rows.length > 0}
   <div class="m-2 flex items-center justify-between gap-4">
     <SheetActionOptions
-      {sheetAction}
+      sheetAction={sheet?.action ?? "create"}
       {dbTables}
       bind:tableName
       {filePath}
-      {sheet}
+      sheet={sheet?.name ?? null}
       headerRow={appliedHeaderRow}
       skipRows={skipRows.applied}
       columnHeaders={rows[0] ?? []}
@@ -142,7 +140,7 @@
     />
     <SheetFilters
       {filePath}
-      {sheet}
+      sheet={sheet?.name ?? null}
       bind:headerRowInput
       {appliedHeaderRow}
       {skipRows}

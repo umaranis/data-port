@@ -102,8 +102,7 @@
   <div class="mt-1 border rounded-lg">
     <Sheet
       {filePath}
-      sheet={wb.selectedSheet?.name ?? null}
-      sheetAction={wb.selectedSheet?.action ?? "create"}
+      sheet={wb.selectedSheet}
       {dbTables}
       savedConnString={connString}
       {view}
