@@ -100,6 +100,7 @@
     </div>
   </div>
   <div class="mt-1 border rounded-lg">
+    {#if wb.selectedSheet}
     <Sheet
       {filePath}
       sheet={wb.selectedSheet}
@@ -107,6 +108,7 @@
       savedConnString={connString}
       {view}
     />
+    {/if}
   </div>
   </div>
 {/if}

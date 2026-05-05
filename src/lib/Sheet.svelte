@@ -14,7 +14,7 @@
 
   type Props = {
     filePath: string | null;
-    sheet: SheetClass | null;
+    sheet: SheetClass;
     dbTables: string[];
     savedConnString?: string | null;
     view?: "data" | "mapping";
@@ -35,7 +35,6 @@
   let totalRows = $state(0);
 
   let headerRowInput = $state(1);
-  let appliedHeaderRow = $state(0);
 
   const skipRows = new SkipRows();
 
@@ -53,7 +52,7 @@
   function applyFilters() {
     const newHeaderRow = Math.max(0, headerRowInput - 1);
     if (
-      newHeaderRow !== appliedHeaderRow &&
+      newHeaderRow !== sheet.appliedHeaderRow &&
       (skipRows.applied.length > 0 || skipRows.input.length > 0)
     ) {
       pendingHeaderRow = newHeaderRow;
@@ -64,10 +63,10 @@
   }
 
   function commitFilters(newHeaderRow: number) {
-    if (newHeaderRow !== appliedHeaderRow) {
+    if (newHeaderRow !== sheet.appliedHeaderRow) {
       skipRows.reset();
     }
-    appliedHeaderRow = newHeaderRow;
+    sheet.appliedHeaderRow = newHeaderRow;
     skipRows.apply();
     currentPage = 0;
     loadPage(0);
@@ -83,7 +82,7 @@
         sheet: sheet.name,
         page,
         pageSize: PAGE_SIZE,
-        headerRow: appliedHeaderRow,
+        headerRow: sheet.appliedHeaderRow,
         skipRows: skipRows.applied,
       },
     );
@@ -105,7 +104,9 @@
   }
 
   $effect(() => {
-    tableName = sheet?.name ? sheet.name.toLocaleLowerCase().replaceAll(" ", "_") : "";
+    tableName = sheet?.name
+      ? sheet.name.toLocaleLowerCase().replaceAll(" ", "_")
+      : "";
   });
 
   $effect(() => {
@@ -114,7 +115,7 @@
     rows = [];
     totalRows = 0;
     headerRowInput = 1;
-    appliedHeaderRow = 0;
+    if (sheet) sheet.appliedHeaderRow = 0;
     skipRows.reset();
     columnMeta = [];
     untrack(() => {
@@ -131,7 +132,7 @@
       bind:tableName
       {filePath}
       sheet={sheet?.name ?? null}
-      headerRow={appliedHeaderRow}
+      headerRow={sheet.appliedHeaderRow}
       skipRows={skipRows.applied}
       columnHeaders={rows[0] ?? []}
       {columnMeta}
@@ -142,7 +143,7 @@
       {filePath}
       sheet={sheet?.name ?? null}
       bind:headerRowInput
-      {appliedHeaderRow}
+      appliedHeaderRow={sheet.appliedHeaderRow}
       {skipRows}
       onapply={applyFilters}
     />
