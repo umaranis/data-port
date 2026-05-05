@@ -26,8 +26,6 @@
     view = "data",
   }: Props = $props();
 
-  let tableName = $state("");
-
   let rows = $state<string[][]>([]);
   let currentPage = $state(0);
   let totalRows = $state(0);
@@ -71,12 +69,6 @@
   }
 
   $effect(() => {
-    tableName = sheet?.name
-      ? sheet.name.toLocaleLowerCase().replaceAll(" ", "_")
-      : "";
-  });
-
-  $effect(() => {
     sheet;
     currentPage = 0;
     rows = [];
@@ -95,13 +87,9 @@
 {#if rows.length > 0}
   <div class="m-2 flex items-center justify-between gap-4">
     <SheetActionOptions
-      sheetAction={sheet?.action ?? "create"}
+      {sheet}
       {dbTables}
-      bind:tableName
       {filePath}
-      sheet={sheet?.name ?? null}
-      headerRow={sheet.headerRow}
-      skipRows={sheet.skipRows}
       columnHeaders={rows[0] ?? []}
       {columnMeta}
       {savedConnString}

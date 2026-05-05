@@ -1,19 +1,15 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
-  import { type SheetAction } from "$lib/WorkbookClass.svelte.js";
+  import { SheetClass } from "$lib/WorkbookClass.svelte.js";
   import InferTypesButton from "$lib/InferTypesButton.svelte";
   import GenerateSqlDialog from "$lib/GenerateSqlDialog.svelte";
   import type { ColumnMeta } from "./pgTypes";
   import { Button } from "$lib/components/ui/button";
 
   type Props = {
-    sheetAction: SheetAction;
+    sheet: SheetClass;
     dbTables: string[];
-    tableName: string;
     filePath: string | null;
-    sheet: string | null;
-    headerRow: number;
-    skipRows: number[];
     columnHeaders: string[];
     columnMeta: ColumnMeta[];
     savedConnString?: string | null;
@@ -21,13 +17,9 @@
   };
 
   let {
-    sheetAction,
-    dbTables,
-    tableName = $bindable(),
-    filePath,
     sheet,
-    headerRow,
-    skipRows,
+    dbTables,
+    filePath,
     columnHeaders,
     columnMeta,
     savedConnString,
@@ -37,11 +29,11 @@
   let sqlDialog = $state<GenerateSqlDialog | null>(null);
 
   $effect(() => {
-    if (sheetAction === "append") {
+    if (sheet.action === "append") {
       const match = dbTables.find(
-        (t) => t === tableName || t.split(".").pop() === tableName,
+        (t) => t === sheet.tableName || t.split(".").pop() === sheet.tableName,
       );
-      tableName = match ?? "";
+      sheet.tableName = match ?? "";
     }
   });
 
@@ -53,7 +45,7 @@
   let inserting = $state(false);
 
   async function insertRows(targetTable: string) {
-    if (!filePath || !sheet || !savedConnString || !targetTable) return;
+    if (!filePath || !sheet.name || !savedConnString || !targetTable) return;
     const columnNames = columnMeta.map((m) => m.name ?? "");
     if (columnNames.some((n) => n === "")) {
       insertStatus = {
@@ -68,12 +60,12 @@
       const count = await invoke<number>("pg_insert_rows", {
         connString: savedConnString,
         path: filePath,
-        sheet,
+        sheet: sheet.name,
         tableName: targetTable,
         columnTypes: columnMeta.map((m) => m.type),
         columnNames,
-        headerRow,
-        skipRows,
+        headerRow: sheet.headerRow,
+        skipRows: sheet.skipRows,
       });
       insertStatus = { ok: true, count };
     } catch (e) {
@@ -84,7 +76,7 @@
   }
 </script>
 
-{#if sheetAction === "create" || sheetAction === "recreate"}
+{#if sheet.action === "create" || sheet.action === "recreate"}
   <div class="flex flex-col gap-1">
     <div class="flex items-center gap-2">
       <label for="table-name" class="text-sm whitespace-nowrap"
@@ -93,10 +85,10 @@
       <input
         id="table-name"
         type="text"
-        bind:value={tableName}
+        bind:value={sheet.tableName}
         class="border rounded px-2 py-1 text-sm w-48"
       />
-      <InferTypesButton {filePath} {sheet} {headerRow} {skipRows} {oninfer} />
+      <InferTypesButton {filePath} sheet={sheet.name} headerRow={sheet.headerRow} skipRows={sheet.skipRows} {oninfer} />
       <Button
         variant="outline"
         size="sm"
@@ -108,8 +100,8 @@
       <Button
         variant="outline"
         size="sm"
-        disabled={!savedConnString || !tableName || inserting}
-        onclick={() => insertRows(tableName)}
+        disabled={!savedConnString || !sheet.tableName || inserting}
+        onclick={() => insertRows(sheet.tableName)}
       >
         {inserting ? "Inserting…" : "Insert rows"}
       </Button>
@@ -128,13 +120,13 @@
   </div>
   <GenerateSqlDialog
     bind:this={sqlDialog}
-    {tableName}
+    tableName={sheet.tableName}
     {columnHeaders}
     {columnMeta}
     {savedConnString}
-    dropTable={sheetAction === "recreate"}
+    dropTable={sheet.action === "recreate"}
   />
-{:else if sheetAction === "append"}
+{:else if sheet.action === "append"}
   <div class="flex flex-col gap-1">
     <div class="flex items-center gap-2">
       <label for="append-table" class="text-sm whitespace-nowrap"
@@ -145,7 +137,7 @@
       {:else}
         <select
           id="append-table"
-          bind:value={tableName}
+          bind:value={sheet.tableName}
           class="border rounded px-2 py-1 text-sm dark:bg-gray-800 dark:border-gray-600"
         >
           <option value="">— none —</option>
@@ -157,8 +149,8 @@
       <Button
         variant="outline"
         size="sm"
-        disabled={!savedConnString || !tableName || inserting}
-        onclick={() => insertRows(tableName)}
+        disabled={!savedConnString || !sheet.tableName || inserting}
+        onclick={() => insertRows(sheet.tableName)}
       >
         {inserting ? "Inserting…" : "Insert rows"}
       </Button>
