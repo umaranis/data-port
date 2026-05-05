@@ -10,7 +10,6 @@
     sheetAction: SheetAction;
     dbTables: string[];
     tableName: string;
-    selectedTable: string;
     filePath: string | null;
     sheet: string | null;
     headerRow: number;
@@ -25,7 +24,6 @@
     sheetAction,
     dbTables,
     tableName = $bindable(),
-    selectedTable = $bindable(),
     filePath,
     sheet,
     headerRow,
@@ -37,6 +35,15 @@
   }: Props = $props();
 
   let sqlDialog = $state<GenerateSqlDialog | null>(null);
+
+  $effect(() => {
+    if (sheetAction === "append") {
+      const match = dbTables.find(
+        (t) => t === tableName || t.split(".").pop() === tableName,
+      );
+      tableName = match ?? "";
+    }
+  });
 
   type InsertStatus =
     | { ok: true; count: number }
@@ -130,7 +137,7 @@
       {:else}
         <select
           id="append-table"
-          bind:value={selectedTable}
+          bind:value={tableName}
           class="border rounded px-2 py-1 text-sm dark:bg-gray-800 dark:border-gray-600"
         >
           <option value="">— none —</option>
@@ -142,8 +149,8 @@
       <Button
         variant="outline"
         size="sm"
-        disabled={!savedConnString || !selectedTable || inserting}
-        onclick={() => insertRows(selectedTable)}
+        disabled={!savedConnString || !tableName || inserting}
+        onclick={() => insertRows(tableName)}
       >
         {inserting ? "Inserting…" : "Insert rows"}
       </Button>

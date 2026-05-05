@@ -31,7 +31,6 @@
   }: Props = $props();
 
   let tableName = $state("");
-  let selectedTable = $state("");
 
   let rows = $state<string[][]>([]);
   let currentPage = $state(0);
@@ -132,7 +131,6 @@
       {sheetAction}
       {dbTables}
       bind:tableName
-      bind:selectedTable
       {filePath}
       {sheet}
       headerRow={appliedHeaderRow}
