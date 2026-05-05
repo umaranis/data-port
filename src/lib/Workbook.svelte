@@ -3,8 +3,7 @@
   import * as Tabs from "$lib/components/ui/tabs";
   import * as Select from "$lib/components/ui/select";
   import Sheet from "$lib/Sheet.svelte";
-
-  export type SheetAction = "create" | "append" | "recreate" | "skip";
+  import { WorkbookClass, Sheet as WorkbookSheet, type SheetAction } from "./WorkbookClass.svelte.js";
 
   const SHEET_ACTIONS: { value: SheetAction; label: string }[] = [
     { value: "create", label: "create table" },
@@ -21,25 +20,19 @@
 
   let { filePath, dbTables, connString }: Props = $props();
 
-  let sheets = $state.raw<string[]>([]);
-  let selectedSheet = $state<string | null>(null);
-  let sheetActions = $state<Record<string, SheetAction>>({});
+  const wb = new WorkbookClass();
   let error = $state<string | null>(null);
   let view = $state<"data" | "mapping">("data");
 
   $effect(() => {
-    sheets = [];
-    selectedSheet = null;
-    sheetActions = {};
+    wb.sheets = [];
+    wb.selectedSheet = null;
     error = null;
     if (!filePath) return;
     invoke<string[]>("get_sheets", { path: filePath })
-      .then((s) => {
-        sheets = s;
-        selectedSheet = s[0] ?? null;
-        sheetActions = Object.fromEntries(
-          s.map((name) => [name, "create" as SheetAction]),
-        );
+      .then((names) => {
+        wb.sheets = names.map((n) => new WorkbookSheet(n));
+        wb.selectedSheet = wb.sheets[0] ?? null;
       })
       .catch((e) => (error = String(e)));
   });
@@ -49,27 +42,27 @@
   <p class="mt-4 text-red-600 dark:text-red-400">{error}</p>
 {/if}
 
-{#if sheets.length > 0}
+{#if wb.sheets.length > 0}
   <div class="mt-4 w-full border rounded-lg p-2">
   <div class="flex flex-row">
     <Tabs.Root
-      value={selectedSheet ?? undefined}
-      onValueChange={(s) => (selectedSheet = s)}
+      value={wb.selectedSheet?.name ?? undefined}
+      onValueChange={(s) => (wb.selectedSheet = wb.sheets.find((sh) => sh.name === s) ?? null)}
     >
       <Tabs.List class="flex flex-wrap h-auto! gap-y-1 gap-x-3">
         <div class="text-xs pl-2">Sheets:</div>
-        {#each sheets as sheet, i}
+        {#each wb.sheets as sheet, i}
           {#if i > 0}
             <div class="w-px self-stretch bg-border"></div>
           {/if}
           <div class="flex items-center">
-            <Tabs.Trigger value={sheet} class="py-2 px-4">
-              {sheet}
+            <Tabs.Trigger value={sheet.name} class="py-2 px-4">
+              {sheet.name}
               <Select.Root
                 type="single"
-                value={sheetActions[sheet]}
+                value={sheet.action}
                 onValueChange={(v) => {
-                  sheetActions[sheet] = v as SheetAction;
+                  sheet.action = v as SheetAction;
                 }}
               >
                 <Select.Trigger
@@ -77,7 +70,7 @@
                   class="ml-1 text-xs h-auto py-0.5 font-normal"
                   onclick={(e) => e.stopPropagation()}
                 >
-                  {SHEET_ACTIONS.find((a) => a.value === sheetActions[sheet])?.label}
+                  {SHEET_ACTIONS.find((a) => a.value === sheet.action)?.label}
                 </Select.Trigger>
                 <Select.Content>
                   {#each SHEET_ACTIONS as action}
@@ -107,7 +100,14 @@
     </div>
   </div>
   <div class="mt-1 border rounded-lg">
-    <Sheet {filePath} sheet={selectedSheet} sheetAction={sheetActions[selectedSheet ?? ""] ?? "create"} {dbTables} savedConnString={connString} {view} />
+    <Sheet
+      {filePath}
+      sheet={wb.selectedSheet?.name ?? null}
+      sheetAction={wb.selectedSheet?.action ?? "create"}
+      {dbTables}
+      savedConnString={connString}
+      {view}
+    />
   </div>
   </div>
 {/if}

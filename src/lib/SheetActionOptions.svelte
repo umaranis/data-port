@@ -1,6 +1,6 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
-  import { type SheetAction } from "$lib/Workbook.svelte";
+  import { type SheetAction } from "$lib/WorkbookClass.svelte.js";
   import InferTypesButton from "$lib/InferTypesButton.svelte";
   import GenerateSqlDialog from "$lib/GenerateSqlDialog.svelte";
   import type { ColumnMeta } from "./pgTypes";

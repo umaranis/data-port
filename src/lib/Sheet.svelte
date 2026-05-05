@@ -5,7 +5,7 @@
   import { type ColumnMeta } from "$lib/pgTypes";
   import { SkipRows } from "$lib/SkipRows.svelte";
   import { untrack } from "svelte";
-  import { type SheetAction } from "$lib/Workbook.svelte";
+  import { type SheetAction } from "$lib/WorkbookClass.svelte.js";
   import SheetActionOptions from "$lib/SheetActionOptions.svelte";
   import SheetTableMapping from "$lib/SheetTableMapping.svelte";
   import SheetPreview from "$lib/SheetPreview.svelte";
