@@ -1,7 +1,6 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
   import SheetFilters from "$lib/SheetFilters.svelte";
-  import { type ColumnMeta } from "$lib/pgTypes";
   import { untrack } from "svelte";
   import { SheetClass } from "$lib/WorkbookClass.svelte.js";
   import SheetActionOptions from "$lib/SheetActionOptions.svelte";
@@ -30,12 +29,10 @@
   let currentPage = $state(0);
   let totalRows = $state(0);
 
-  let columnMeta = $state<ColumnMeta[]>([]);
-
   let totalPages = $derived(Math.max(1, Math.ceil(totalRows / PAGE_SIZE)));
 
-  function freshMeta(count: number): ColumnMeta[] {
-    return Array.from({ length: count }, () => ({ type: "text" }));
+  function freshMeta(count: number) {
+    return Array.from({ length: count }, () => ({ type: "text" as const }));
   }
 
   async function loadHeader() {
@@ -45,8 +42,8 @@
       sheet: sheet.name,
       headerRow: sheet.headerRow,
     });
-    if (columnMeta.length !== sheet.headers.length) {
-      columnMeta = freshMeta(sheet.headers.length);
+    if (sheet.columnMeta.length !== sheet.headers.length) {
+      sheet.columnMeta = freshMeta(sheet.headers.length);
     }
   }
 
@@ -73,8 +70,8 @@
     await loadPage(page);
   }
 
-  function applyInferredTypes(types: ColumnMeta[]) {
-    columnMeta = types;
+  function applyInferredTypes(types: typeof sheet.columnMeta) {
+    sheet.columnMeta = types;
   }
 
   $effect(() => {
@@ -82,12 +79,6 @@
     currentPage = 0;
     rows = [];
     totalRows = 0;
-    if (sheet) {
-      sheet.headerRow = 0;
-      sheet.skipRows = [];
-      sheet.headers = [];
-    }
-    columnMeta = [];
     untrack(() => {
       loadHeader();
       loadPage(0);
@@ -101,7 +92,6 @@
       {sheet}
       {dbTables}
       {filePath}
-      {columnMeta}
       {savedConnString}
       oninfer={applyInferredTypes}
     />
@@ -117,12 +107,15 @@
   </div>
 
   {#if view === "mapping"}
-    <SheetTableMapping columnHeaders={sheet.headers} {columnMeta} />
+    <SheetTableMapping
+      columnHeaders={sheet.headers}
+      columnMeta={sheet.columnMeta}
+    />
   {:else}
     <SheetPreview
       {rows}
       columnHeaders={sheet.headers}
-      {columnMeta}
+      columnMeta={sheet.columnMeta}
       {currentPage}
       {totalPages}
       {totalRows}

@@ -10,7 +10,6 @@
     sheet: SheetClass;
     dbTables: string[];
     filePath: string | null;
-    columnMeta: ColumnMeta[];
     savedConnString?: string | null;
     oninfer: (types: ColumnMeta[]) => void;
   };
@@ -19,7 +18,6 @@
     sheet,
     dbTables,
     filePath,
-    columnMeta,
     savedConnString,
     oninfer,
   }: Props = $props();
@@ -44,7 +42,7 @@
 
   async function insertRows(targetTable: string) {
     if (!filePath || !sheet.name || !savedConnString || !targetTable) return;
-    const columnNames = columnMeta.map((m) => m.name ?? "");
+    const columnNames = sheet.columnMeta.map((m) => m.name ?? "");
     if (columnNames.some((n) => n === "")) {
       insertStatus = {
         ok: false,
@@ -60,7 +58,7 @@
         path: filePath,
         sheet: sheet.name,
         tableName: targetTable,
-        columnTypes: columnMeta.map((m) => m.type),
+        columnTypes: sheet.columnMeta.map((m) => m.type),
         columnNames,
         headerRow: sheet.headerRow,
         skipRows: sheet.skipRows,
@@ -120,7 +118,7 @@
     bind:this={sqlDialog}
     tableName={sheet.tableName}
     columnHeaders={sheet.headers}
-    {columnMeta}
+    columnMeta={sheet.columnMeta}
     {savedConnString}
     dropTable={sheet.action === "recreate"}
   />
