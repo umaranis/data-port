@@ -104,6 +104,24 @@ fn get_sheet_rows_paged(
 }
 
 #[tauri::command]
+fn get_sheet_header(
+  path: &str,
+  sheet: &str,
+  header_row: usize,
+  cache: tauri::State<SheetCache>,
+) -> Result<Vec<String>, String> {
+  let range = cache.get_range(path, sheet)?;
+  let mut all_rows = range.rows();
+  for _ in 0..header_row {
+    all_rows.next();
+  }
+  Ok(all_rows
+    .next()
+    .map(|r| r.iter().map(cell_to_string).collect())
+    .unwrap_or_default())
+}
+
+#[tauri::command]
 fn get_sheet_rows_paged_filtered(
   path: &str,
   sheet: &str,
@@ -117,14 +135,9 @@ fn get_sheet_rows_paged_filtered(
 
   let mut all_rows = range.rows();
 
-  for _ in 0..header_row {
+  for _ in 0..=header_row {
     all_rows.next();
   }
-
-  let header: Vec<String> = all_rows
-    .next()
-    .map(|r| r.iter().map(cell_to_string).collect())
-    .unwrap_or_default();
 
   let skip_set: std::collections::HashSet<usize> = skip_rows.into_iter().collect();
 
@@ -144,11 +157,7 @@ fn get_sheet_rows_paged_filtered(
     .map(|(_, row)| row.iter().map(cell_to_string).collect())
     .collect();
 
-  let mut rows = Vec::with_capacity(page_data.len() + 1);
-  rows.push(header);
-  rows.extend(page_data);
-
-  Ok(PagedRows { rows, total_rows })
+  Ok(PagedRows { rows: page_data, total_rows })
 }
 
 #[tauri::command]
@@ -187,6 +196,7 @@ pub fn run() {
     .manage(SheetCache::new())
     .invoke_handler(tauri::generate_handler![
       get_sheets,
+      get_sheet_header,
       get_sheet_rows_paged,
       get_sheet_rows_paged_filtered,
       get_blank_rows,

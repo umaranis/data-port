@@ -35,10 +35,13 @@ export async function mockTauriIpc(page: Page, config: MockConfig = {}) {
           case "get_sheets":
             return Promise.resolve(cfg.sheetNames ?? ["Sheet1", "Sheet2"]);
 
+          case "get_sheet_header":
+            return Promise.resolve(cfg.sheetRows?.[0] ?? []);
+
           case "get_sheet_rows_paged":
           case "get_sheet_rows_paged_filtered":
             return Promise.resolve({
-              rows: cfg.sheetRows ?? [],
+              rows: cfg.sheetRows?.slice(1) ?? [],
               total_rows: Math.max(0, (cfg.sheetRows?.length ?? 1) - 1),
             });
 

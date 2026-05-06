@@ -6,6 +6,7 @@
 
   type Props = {
     rows: string[][];
+    columnHeaders: string[];
     columnMeta: ColumnMeta[];
     currentPage: number;
     totalPages: number;
@@ -13,21 +14,21 @@
     onpage: (page: number) => void;
   };
 
-  let { rows, columnMeta, currentPage, totalPages, totalRows, onpage }: Props = $props();
+  let { rows, columnHeaders, columnMeta, currentPage, totalPages, totalRows, onpage }: Props = $props();
 </script>
 
 <div class="mt-2 overflow-x-auto">
   <Table.Root>
     <Table.Header>
       <Table.Row>
-        {#each rows[0] as _, i}
+        {#each columnHeaders as _, i}
           <Table.Head class="border align-top bg-gray-100 dark:bg-gray-900">
             <ColumnTypeHeader meta={columnMeta[i]} />
           </Table.Head>
         {/each}
       </Table.Row>
       <Table.Row>
-        {#each rows[0] as cell}
+        {#each columnHeaders as cell}
           <Table.Head class="border whitespace-nowrap bg-gray-50 dark:bg-gray-950 font-semibold"
             >{cell}</Table.Head
           >
@@ -35,7 +36,7 @@
       </Table.Row>
     </Table.Header>
     <Table.Body>
-      {#each rows.slice(1) as row}
+      {#each rows as row}
         <Table.Row>
           {#each row as cell}
             <Table.Cell class="whitespace-nowrap border">{cell}</Table.Cell>

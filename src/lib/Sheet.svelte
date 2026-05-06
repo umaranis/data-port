@@ -26,6 +26,7 @@
     view = "data",
   }: Props = $props();
 
+  let headers = $state<string[]>([]);
   let rows = $state<string[][]>([]);
   let currentPage = $state(0);
   let totalRows = $state(0);
@@ -36,6 +37,18 @@
 
   function freshMeta(count: number): ColumnMeta[] {
     return Array.from({ length: count }, () => ({ type: "text" }));
+  }
+
+  async function loadHeader() {
+    if (!filePath || !sheet) return;
+    headers = await invoke<string[]>("get_sheet_header", {
+      path: filePath,
+      sheet: sheet.name,
+      headerRow: sheet.headerRow,
+    });
+    if (columnMeta.length !== headers.length) {
+      columnMeta = freshMeta(headers.length);
+    }
   }
 
   async function loadPage(page: number) {
@@ -53,9 +66,6 @@
     );
     rows = result.rows;
     totalRows = result.total_rows;
-    if (columnMeta.length !== rows[0]?.length) {
-      columnMeta = freshMeta(rows[0]?.length ?? 0);
-    }
   }
 
   async function goToPage(page: number) {
@@ -72,6 +82,7 @@
     sheet;
     currentPage = 0;
     rows = [];
+    headers = [];
     totalRows = 0;
     if (sheet) {
       sheet.headerRow = 0;
@@ -79,18 +90,19 @@
     }
     columnMeta = [];
     untrack(() => {
+      loadHeader();
       loadPage(0);
     });
   });
 </script>
 
-{#if rows.length > 0}
+{#if headers.length > 0}
   <div class="m-2 flex items-center justify-between gap-4">
     <SheetActionOptions
       {sheet}
       {dbTables}
       {filePath}
-      columnHeaders={rows[0] ?? []}
+      columnHeaders={headers}
       {columnMeta}
       {savedConnString}
       oninfer={applyInferredTypes}
@@ -98,15 +110,20 @@
     <SheetFilters
       {filePath}
       {sheet}
-      oncommit={() => { currentPage = 0; loadPage(0); }}
+      oncommit={() => {
+        currentPage = 0;
+        loadHeader();
+        loadPage(0);
+      }}
     />
   </div>
 
   {#if view === "mapping"}
-    <SheetTableMapping columnHeaders={rows[0] ?? []} {columnMeta} />
+    <SheetTableMapping columnHeaders={headers} {columnMeta} />
   {:else}
     <SheetPreview
       {rows}
+      columnHeaders={headers}
       {columnMeta}
       {currentPage}
       {totalPages}
