@@ -11,6 +11,7 @@ export class SheetClass {
   public action: SheetAction = $state("create");
   public headerRow: number = $state(0);
   public skipRows: number[] = $state([]);
+  public headers: string[] = $state([]);
 
   constructor(name: string) {
     this.name = name;

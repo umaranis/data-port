@@ -10,7 +10,6 @@
     sheet: SheetClass;
     dbTables: string[];
     filePath: string | null;
-    columnHeaders: string[];
     columnMeta: ColumnMeta[];
     savedConnString?: string | null;
     oninfer: (types: ColumnMeta[]) => void;
@@ -20,7 +19,6 @@
     sheet,
     dbTables,
     filePath,
-    columnHeaders,
     columnMeta,
     savedConnString,
     oninfer,
@@ -92,7 +90,7 @@
       <Button
         variant="outline"
         size="sm"
-        disabled={columnHeaders.length === 0}
+        disabled={sheet.headers.length === 0}
         onclick={() => sqlDialog?.open()}
       >
         Generate SQL
@@ -121,7 +119,7 @@
   <GenerateSqlDialog
     bind:this={sqlDialog}
     tableName={sheet.tableName}
-    {columnHeaders}
+    columnHeaders={sheet.headers}
     {columnMeta}
     {savedConnString}
     dropTable={sheet.action === "recreate"}
