@@ -89,6 +89,7 @@
     min="1"
     bind:value={headerRowInput}
     onkeydown={(e) => e.key === "Enter" && hasChanges && applyFilters()}
+    onchange={() => hasChanges && applyFilters()}
     class="border rounded px-2 py-1 text-sm w-16"
   />
   <label for="skip-rows" class="text-sm whitespace-nowrap ml-2"
