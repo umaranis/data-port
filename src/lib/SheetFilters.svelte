@@ -118,15 +118,7 @@
   <Button variant="outline" size="sm" onclick={findBlankRows}>
     Find blank rows
   </Button>
-  <Button
-    variant="outline"
-    size="sm"
-    onclick={applyFilters}
-    disabled={!hasChanges}
-  >
-    Apply
-  </Button>
-  {#if sheet.skipRows.length > 0}
+{#if sheet.skipRows.length > 0}
     <span class="text-sm text-gray-500">
       {sheet.skipRows.length} row{sheet.skipRows.length !== 1 ? "s" : ""} hidden
     </span>

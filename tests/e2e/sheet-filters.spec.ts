@@ -30,10 +30,6 @@ function skipRowsInput(page: Page) {
   return page.locator("#skip-rows");
 }
 
-function applyButton(page: Page) {
-  return page.getByRole("button", { name: "Apply" });
-}
-
 function findBlankButton(page: Page) {
   return page.getByRole("button", { name: "Find blank rows" });
 }
@@ -51,44 +47,9 @@ test.describe("initial state", () => {
     await expect(skipRowsInput(page)).toHaveValue("");
   });
 
-  test("Apply button is disabled when no changes", async ({ page }) => {
-    await setup(page);
-    await expect(applyButton(page)).toBeDisabled();
-  });
-
   test("hidden row count is not shown", async ({ page }) => {
     await setup(page);
     await expect(page.getByText(/rows? hidden/)).not.toBeAttached();
-  });
-});
-
-// ─── hasChanges / Apply enable ────────────────────────────────────────────────
-
-test.describe("Apply enabled state", () => {
-  test("enabled when header row value changes", async ({ page }) => {
-    await setup(page);
-    await headerRowInput(page).fill("2");
-    await expect(applyButton(page)).toBeEnabled();
-  });
-
-  test("re-disabled when header row is set back to 1", async ({ page }) => {
-    await setup(page);
-    await headerRowInput(page).fill("2");
-    await headerRowInput(page).fill("1");
-    await expect(applyButton(page)).toBeDisabled();
-  });
-
-  test("enabled when skip rows input has text", async ({ page }) => {
-    await setup(page);
-    await skipRowsInput(page).fill("2");
-    await expect(applyButton(page)).toBeEnabled();
-  });
-
-  test("re-disabled after applying skip rows with no further changes", async ({ page }) => {
-    await setup(page);
-    await skipRowsInput(page).fill("2");
-    await applyButton(page).click();
-    await expect(applyButton(page)).toBeDisabled();
   });
 });
 
@@ -98,21 +59,21 @@ test.describe("applying skip rows", () => {
   test("shows hidden row count after applying", async ({ page }) => {
     await setup(page);
     await skipRowsInput(page).fill("2,3");
-    await applyButton(page).click();
+    await skipRowsInput(page).press("Tab");
     await expect(page.getByText("2 rows hidden")).toBeVisible();
   });
 
   test("singular label for one skipped row", async ({ page }) => {
     await setup(page);
     await skipRowsInput(page).fill("2");
-    await applyButton(page).click();
+    await skipRowsInput(page).press("Tab");
     await expect(page.getByText("1 row hidden")).toBeVisible();
   });
 
   test("get_sheet_rows_paged_filtered called with correct skipRows", async ({ page }) => {
     await setup(page);
     await skipRowsInput(page).fill("2,3");
-    await applyButton(page).click();
+    await skipRowsInput(page).press("Tab");
 
     const calls = await page.evaluate(
       () => (window as any).__tauriCalls__ as { cmd: string; args: any }[]
@@ -128,7 +89,7 @@ test.describe("applying skip rows", () => {
   test("get_sheet_rows_paged_filtered called with page reset to 0", async ({ page }) => {
     await setup(page);
     await skipRowsInput(page).fill("2");
-    await applyButton(page).click();
+    await skipRowsInput(page).press("Tab");
 
     const calls = await page.evaluate(
       () => (window as any).__tauriCalls__ as { cmd: string; args: any }[]
@@ -143,7 +104,7 @@ test.describe("applying skip rows", () => {
   test("range syntax expands correctly in skipRows arg", async ({ page }) => {
     await setup(page);
     await skipRowsInput(page).fill("2-4");
-    await applyButton(page).click();
+    await skipRowsInput(page).press("Tab");
 
     const calls = await page.evaluate(
       () => (window as any).__tauriCalls__ as { cmd: string; args: any }[]
@@ -158,11 +119,11 @@ test.describe("applying skip rows", () => {
   test("clearing skip rows input and applying removes hidden count", async ({ page }) => {
     await setup(page);
     await skipRowsInput(page).fill("2");
-    await applyButton(page).click();
+    await skipRowsInput(page).press("Tab");
     await expect(page.getByText("1 row hidden")).toBeVisible();
 
     await skipRowsInput(page).fill("");
-    await applyButton(page).click();
+    await skipRowsInput(page).press("Tab");
     await expect(page.getByText(/rows? hidden/)).not.toBeAttached();
   });
 });
@@ -173,7 +134,7 @@ test.describe("applying header row", () => {
   test("get_sheet_rows_paged_filtered called with correct headerRow", async ({ page }) => {
     await setup(page);
     await headerRowInput(page).fill("2");
-    await applyButton(page).click();
+    await headerRowInput(page).press("Tab");
 
     const calls = await page.evaluate(
       () => (window as any).__tauriCalls__ as { cmd: string; args: any }[]
@@ -259,12 +220,6 @@ test.describe("Find blank rows", () => {
     expect(call!.args.path).toBe(FAKE_PATH);
     expect(call!.args.headerRow).toBe(0);
   });
-
-  test("enables Apply after finding blank rows", async ({ page }) => {
-    await setup(page, { blankRows: [3] });
-    await findBlankButton(page).click();
-    await expect(applyButton(page)).toBeEnabled();
-  });
 });
 
 // ─── Confirm dialog (header change with active skip rows) ────────────────────
@@ -272,10 +227,10 @@ test.describe("Find blank rows", () => {
 test.describe("confirm clear skip rows dialog", () => {
   async function applySkipRowsThenChangeHeader(page: Page) {
     await skipRowsInput(page).fill("2");
-    await applyButton(page).click();
+    await skipRowsInput(page).press("Tab");
     await expect(page.getByText("1 row hidden")).toBeVisible();
     await headerRowInput(page).fill("2");
-    await applyButton(page).click();
+    await headerRowInput(page).press("Tab");
   }
 
   test("dialog appears when changing header row while skip rows are active", async ({ page }) => {
@@ -315,9 +270,9 @@ test.describe("confirm clear skip rows dialog", () => {
   test("dialog does not appear when changing only skip rows (no header change)", async ({ page }) => {
     await setup(page);
     await skipRowsInput(page).fill("2");
-    await applyButton(page).click();
+    await skipRowsInput(page).press("Tab");
     await skipRowsInput(page).fill("3");
-    await applyButton(page).click();
+    await skipRowsInput(page).press("Tab");
 
     await expect(page.getByRole("alertdialog")).not.toBeAttached();
   });
@@ -347,7 +302,7 @@ test.describe("sheet switch resets filters", () => {
   test("header row resets to 1 when switching sheets", async ({ page }) => {
     await setupTwoSheets(page);
     await headerRowInput(page).fill("2");
-    await applyButton(page).click();
+    await headerRowInput(page).press("Tab");
     await switchToSheet(page, "Beta");
     await expect(headerRowInput(page)).toHaveValue("1");
   });
@@ -355,7 +310,7 @@ test.describe("sheet switch resets filters", () => {
   test("skip rows input clears when switching sheets", async ({ page }) => {
     await setupTwoSheets(page);
     await skipRowsInput(page).fill("2");
-    await applyButton(page).click();
+    await skipRowsInput(page).press("Tab");
     await switchToSheet(page, "Beta");
     await expect(skipRowsInput(page)).toHaveValue("");
   });
@@ -363,16 +318,9 @@ test.describe("sheet switch resets filters", () => {
   test("hidden row count is gone after switching sheets", async ({ page }) => {
     await setupTwoSheets(page);
     await skipRowsInput(page).fill("2");
-    await applyButton(page).click();
+    await skipRowsInput(page).press("Tab");
     await expect(page.getByText("1 row hidden")).toBeVisible();
     await switchToSheet(page, "Beta");
     await expect(page.getByText(/rows? hidden/)).not.toBeAttached();
-  });
-
-  test("Apply is disabled immediately after switching sheets", async ({ page }) => {
-    await setupTwoSheets(page);
-    await headerRowInput(page).fill("2");
-    await switchToSheet(page, "Beta");
-    await expect(applyButton(page)).toBeDisabled();
   });
 });
