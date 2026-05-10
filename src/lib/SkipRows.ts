@@ -15,6 +15,7 @@ export function parseSkipInput(input: string): number[] {
 }
 
 export function serializeSkipInput(nums: Array<number>): string {
+  nums = [...nums].sort((a, b) => a - b);
   const parts: string[] = [];
   let i = 0;
   while (i < nums.length) {
