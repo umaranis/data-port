@@ -18,7 +18,7 @@ test.beforeEach(async ({ page }) => {
 
 test("renders column headers from the first row of sheet data", async ({ page }) => {
   for (const header of FAKE_ROWS[0]) {
-    await expect(page.getByRole("columnheader", { name: header })).toBeVisible();
+    await expect(page.getByRole("columnheader", { name: header, exact: true })).toBeVisible();
   }
 });
 

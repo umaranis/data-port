@@ -37,7 +37,7 @@
                 >{i + 1}</Table.Cell
               >
               <Table.Cell class="border font-medium whitespace-nowrap"
-                >{column}</Table.Cell
+                >{column.header}</Table.Cell
               >
               <Table.Cell class="border">
                 <ColumnTypeHeader meta={column.dbColumn} />

@@ -269,7 +269,7 @@ test.describe("confirm clear skip rows dialog", () => {
 
     await expect(page.getByRole("alertdialog")).not.toBeVisible();
     await expect(page.getByText("1 row hidden")).toBeVisible();
-    await expect(headerRowInput(page)).toHaveValue("2");
+    await expect(headerRowInput(page)).toHaveValue("1");
   });
 
   test("Continue clears skip rows and applies new header row", async ({

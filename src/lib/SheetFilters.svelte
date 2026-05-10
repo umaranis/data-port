@@ -96,8 +96,8 @@
   <Button
     variant="outline"
     size="sm"
-    onclick={() => {
-      sheet.data.skipBlankRows();
+    onclick={async () => {
+      await sheet.data.skipBlankRows();
       inputSkipRows = serializeSkipInput(sheet.skipRows);
       appliedInputSkipRows = inputSkipRows;
     }}

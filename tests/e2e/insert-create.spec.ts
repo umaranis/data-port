@@ -50,7 +50,10 @@ async function fillColumnNames(page: Page, names: string[]) {
 
 async function getLastInsertCall(page: Page) {
   return page.evaluate(() => {
-    const calls = (window as any).__tauriCalls__ as { cmd: string; args: any }[];
+    const calls = (window as any).__tauriCalls__ as {
+      cmd: string;
+      args: any;
+    }[];
     return [...calls].reverse().find((c) => c.cmd === "pg_insert_rows")?.args;
   });
 }
@@ -66,19 +69,27 @@ test.describe("create insert flow", () => {
     await expect(page.locator("#table-name")).toHaveValue(SHEET_NAME);
   });
 
-  test("Insert button is disabled when table name is cleared", async ({ page }) => {
+  test("Insert button is disabled when table name is cleared", async ({
+    page,
+  }) => {
     await page.locator("#table-name").clear();
-    await expect(page.getByRole("button", { name: "Insert rows" })).toBeDisabled();
+    await expect(
+      page.getByRole("button", { name: "Insert rows" }),
+    ).toBeDisabled();
   });
 
   test("shows error when column names are blank", async ({ page }) => {
-    await page.getByRole("button", { name: "Insert rows" }).click();
+    await page.getByRole("table").locator('input[type="text"]').first().clear();
+    await page.getByRole("button", { name: "Insert rows" }).click();    
     await expect(
       page.getByText("All column names must be set before inserting."),
     ).toBeVisible();
   });
 
-  test("pg_insert_rows is not called when column names are blank", async ({ page }) => {
+  test("pg_insert_rows is not called when column names are blank", async ({
+    page,
+  }) => {    
+    await page.getByRole("table").locator('input[type="text"]').first().clear();
     await page.getByRole("button", { name: "Insert rows" }).click();
     await expect(
       page.getByText("All column names must be set before inserting."),
@@ -140,7 +151,9 @@ test.describe("create insert flow", () => {
     expect(call.headerRow).toBe(0);
   });
 
-  test("pg_insert_rows receives empty skipRows by default", async ({ page }) => {
+  test("pg_insert_rows receives empty skipRows by default", async ({
+    page,
+  }) => {
     await fillColumnNames(page, COLUMN_NAMES);
     await page.getByRole("button", { name: "Insert rows" }).click();
     await expect(page.getByText("2 rows inserted.")).toBeVisible();
