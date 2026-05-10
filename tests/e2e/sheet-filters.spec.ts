@@ -10,7 +10,10 @@ const FAKE_ROWS = [
   ["Charlie", "East", "970"],
 ];
 
-async function setup(page: Page, extra: Parameters<typeof mockTauriIpc>[1] = {}) {
+async function setup(
+  page: Page,
+  extra: Parameters<typeof mockTauriIpc>[1] = {},
+) {
   await mockTauriIpc(page, {
     selectedFile: FAKE_PATH,
     sheetRows: FAKE_ROWS,
@@ -31,7 +34,7 @@ function skipRowsInput(page: Page) {
 }
 
 function findBlankButton(page: Page) {
-  return page.getByRole("button", { name: "Find blank rows" });
+  return page.getByRole("button", { name: "Skip blank rows" });
 }
 
 // ─── Initial state ───────────────────────────────────────────────────────────
@@ -70,13 +73,15 @@ test.describe("applying skip rows", () => {
     await expect(page.getByText("1 row hidden")).toBeVisible();
   });
 
-  test("get_sheet_rows_paged_filtered called with correct skipRows", async ({ page }) => {
+  test("get_sheet_rows_paged_filtered called with correct skipRows", async ({
+    page,
+  }) => {
     await setup(page);
     await skipRowsInput(page).fill("2,3");
     await skipRowsInput(page).press("Tab");
 
     const calls = await page.evaluate(
-      () => (window as any).__tauriCalls__ as { cmd: string; args: any }[]
+      () => (window as any).__tauriCalls__ as { cmd: string; args: any }[],
     );
     const last = [...calls]
       .reverse()
@@ -86,13 +91,15 @@ test.describe("applying skip rows", () => {
     expect(last!.args.skipRows).toEqual([2, 3]);
   });
 
-  test("get_sheet_rows_paged_filtered called with page reset to 0", async ({ page }) => {
+  test("get_sheet_rows_paged_filtered called with page reset to 0", async ({
+    page,
+  }) => {
     await setup(page);
     await skipRowsInput(page).fill("2");
     await skipRowsInput(page).press("Tab");
 
     const calls = await page.evaluate(
-      () => (window as any).__tauriCalls__ as { cmd: string; args: any }[]
+      () => (window as any).__tauriCalls__ as { cmd: string; args: any }[],
     );
     const last = [...calls]
       .reverse()
@@ -107,7 +114,7 @@ test.describe("applying skip rows", () => {
     await skipRowsInput(page).press("Tab");
 
     const calls = await page.evaluate(
-      () => (window as any).__tauriCalls__ as { cmd: string; args: any }[]
+      () => (window as any).__tauriCalls__ as { cmd: string; args: any }[],
     );
     const last = [...calls]
       .reverse()
@@ -116,7 +123,9 @@ test.describe("applying skip rows", () => {
     expect(last!.args.skipRows).toEqual([2, 3, 4]);
   });
 
-  test("clearing skip rows input and applying removes hidden count", async ({ page }) => {
+  test("clearing skip rows input and applying removes hidden count", async ({
+    page,
+  }) => {
     await setup(page);
     await skipRowsInput(page).fill("2");
     await skipRowsInput(page).press("Tab");
@@ -131,13 +140,15 @@ test.describe("applying skip rows", () => {
 // ─── Applying header row ─────────────────────────────────────────────────────
 
 test.describe("applying header row", () => {
-  test("get_sheet_rows_paged_filtered called with correct headerRow", async ({ page }) => {
+  test("get_sheet_rows_paged_filtered called with correct headerRow", async ({
+    page,
+  }) => {
     await setup(page);
     await headerRowInput(page).fill("2");
     await headerRowInput(page).press("Tab");
 
     const calls = await page.evaluate(
-      () => (window as any).__tauriCalls__ as { cmd: string; args: any }[]
+      () => (window as any).__tauriCalls__ as { cmd: string; args: any }[],
     );
     const last = [...calls]
       .reverse()
@@ -150,13 +161,15 @@ test.describe("applying header row", () => {
 // ─── Enter key ───────────────────────────────────────────────────────────────
 
 test.describe("Enter key behaviour", () => {
-  test("Enter in header row input applies filters when there are changes", async ({ page }) => {
+  test("Enter in header row input applies filters when there are changes", async ({
+    page,
+  }) => {
     await setup(page);
     await headerRowInput(page).fill("2");
     await headerRowInput(page).press("Enter");
 
     const calls = await page.evaluate(
-      () => (window as any).__tauriCalls__ as { cmd: string; args: any }[]
+      () => (window as any).__tauriCalls__ as { cmd: string; args: any }[],
     );
     const last = [...calls]
       .reverse()
@@ -165,21 +178,25 @@ test.describe("Enter key behaviour", () => {
     expect(last!.args.headerRow).toBe(1);
   });
 
-  test("Enter in skip rows input applies filters when there are changes", async ({ page }) => {
+  test("Enter in skip rows input applies filters when there are changes", async ({
+    page,
+  }) => {
     await setup(page);
     await skipRowsInput(page).fill("2");
     await skipRowsInput(page).press("Enter");
     await expect(page.getByText("1 row hidden")).toBeVisible();
   });
 
-  test("Enter in header row input does nothing when no changes", async ({ page }) => {
+  test("Enter in header row input does nothing when no changes", async ({
+    page,
+  }) => {
     await setup(page);
     const callsBefore = await page.evaluate(
-      () => ((window as any).__tauriCalls__ as { cmd: string }[]).length
+      () => ((window as any).__tauriCalls__ as { cmd: string }[]).length,
     );
     await headerRowInput(page).press("Enter");
     const callsAfter = await page.evaluate(
-      () => ((window as any).__tauriCalls__ as { cmd: string }[]).length
+      () => ((window as any).__tauriCalls__ as { cmd: string }[]).length,
     );
     expect(callsAfter).toBe(callsBefore);
   });
@@ -187,8 +204,10 @@ test.describe("Enter key behaviour", () => {
 
 // ─── Find blank rows ─────────────────────────────────────────────────────────
 
-test.describe("Find blank rows", () => {
-  test("populates skip rows input from get_blank_rows response", async ({ page }) => {
+test.describe("Skip blank rows", () => {
+  test("populates skip rows input from get_blank_rows response", async ({
+    page,
+  }) => {
     await setup(page, { blankRows: [3, 5] });
     await findBlankButton(page).click();
     await expect(skipRowsInput(page)).toHaveValue("3,5");
@@ -213,7 +232,7 @@ test.describe("Find blank rows", () => {
     await findBlankButton(page).click();
 
     const calls = await page.evaluate(
-      () => (window as any).__tauriCalls__ as { cmd: string; args: any }[]
+      () => (window as any).__tauriCalls__ as { cmd: string; args: any }[],
     );
     const call = [...calls].reverse().find((c) => c.cmd === "get_blank_rows");
     expect(call).toBeDefined();
@@ -233,13 +252,17 @@ test.describe("confirm clear skip rows dialog", () => {
     await headerRowInput(page).press("Tab");
   }
 
-  test("dialog appears when changing header row while skip rows are active", async ({ page }) => {
+  test("dialog appears when changing header row while skip rows are active", async ({
+    page,
+  }) => {
     await setup(page);
     await applySkipRowsThenChangeHeader(page);
     await expect(page.getByRole("alertdialog")).toBeVisible();
   });
 
-  test("Cancel keeps original header row and skip rows intact", async ({ page }) => {
+  test("Cancel keeps original header row and skip rows intact", async ({
+    page,
+  }) => {
     await setup(page);
     await applySkipRowsThenChangeHeader(page);
     await page.getByRole("button", { name: "Cancel" }).click();
@@ -249,7 +272,9 @@ test.describe("confirm clear skip rows dialog", () => {
     await expect(headerRowInput(page)).toHaveValue("2");
   });
 
-  test("Continue clears skip rows and applies new header row", async ({ page }) => {
+  test("Continue clears skip rows and applies new header row", async ({
+    page,
+  }) => {
     await setup(page);
     await applySkipRowsThenChangeHeader(page);
     await page.getByRole("button", { name: "Continue" }).click();
@@ -258,7 +283,7 @@ test.describe("confirm clear skip rows dialog", () => {
     await expect(page.getByText(/rows? hidden/)).not.toBeAttached();
 
     const calls = await page.evaluate(
-      () => (window as any).__tauriCalls__ as { cmd: string; args: any }[]
+      () => (window as any).__tauriCalls__ as { cmd: string; args: any }[],
     );
     const last = [...calls]
       .reverse()
@@ -267,7 +292,9 @@ test.describe("confirm clear skip rows dialog", () => {
     expect(last!.args.skipRows).toEqual([]);
   });
 
-  test("dialog does not appear when changing only skip rows (no header change)", async ({ page }) => {
+  test("dialog does not appear when changing only skip rows (no header change)", async ({
+    page,
+  }) => {
     await setup(page);
     await skipRowsInput(page).fill("2");
     await skipRowsInput(page).press("Tab");
@@ -296,7 +323,10 @@ test.describe("sheet switch resets filters", () => {
     // The tab trigger contains a nested Select.Trigger with stopPropagation.
     // Click in the left-padding zone (x=4) where no child element exists,
     // so the click reaches the Tabs.Trigger handler and fires onValueChange.
-    await page.getByRole("tab").filter({ hasText: name }).click({ position: { x: 4, y: 12 } });
+    await page
+      .getByRole("tab")
+      .filter({ hasText: name })
+      .click({ position: { x: 4, y: 12 } });
   }
 
   test("header row resets to 1 when switching sheets", async ({ page }) => {

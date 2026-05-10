@@ -46,13 +46,7 @@
             <div class="flex items-center">
               <Tabs.Trigger value={sheet.name} class="py-2 px-4">
                 {sheet.name}
-                <Select.Root
-                  type="single"
-                  value={sheet.action}
-                  onValueChange={(v) => {
-                    sheet.action = v as SheetAction;
-                  }}
-                >
+                <Select.Root type="single" bind:value={sheet.action}>
                   <Select.Trigger
                     size="sm"
                     class="ml-1 text-xs h-auto py-0.5 font-normal"

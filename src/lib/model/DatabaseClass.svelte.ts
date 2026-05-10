@@ -10,10 +10,10 @@ export class DatabaseClass extends AsyncResource {
   set connectionString(value: string | null) {
     this._connectionString = value;
 
-    if (!value) {
+    if (value) {
       this.load(async () => {
-        invoke<string[]>("get_database_tables", {
-          connectionString: this.connectionString,
+        return invoke<string[]>("pg_get_tables", {
+          connString: this.connectionString,
         }).then((tables) => {
           this._tables = tables;
         });

@@ -111,12 +111,6 @@
   {/if}
 </div>
 
-<Inspect.Values
-  {headerRowInput}
-  sheetHeaderRow={sheet.headerRow}
-  {hasHeaderRowChanges}
-/>
-
 <ConfirmClearSkipRows
   bind:open={confirmDialogOpen}
   onconfirm={() => applyHeaderRow(headerRowInput - 1)}
