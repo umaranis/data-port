@@ -1,14 +1,14 @@
 <script lang="ts">
+  import * as Select from "$lib/components/ui/select";
   import {
     PG_TYPES,
     TYPE_MODIFIERS,
     type ColumnMeta,
     type PgType,
-  } from "$lib/pgTypes";
-  import * as Select from "$lib/components/ui/select";
+  } from "$lib/model/pgTypes";
 
   type Props = { meta: ColumnMeta };
-  let { meta }: Props = $props();
+  let { meta = $bindable() }: Props = $props();
 
   let modifiers = $derived(TYPE_MODIFIERS[meta.type] ?? {});
 </script>

@@ -2,41 +2,39 @@
   import * as Table from "$lib/components/ui/table";
   import Paging from "$lib/Paging.svelte";
   import ColumnTypeHeader from "$lib/ColumnTypeHeader.svelte";
-  import { type ColumnMeta } from "$lib/pgTypes";
+  import { type ColumnMeta } from "$lib/model/pgTypes";
+  import type { SheetDataClass } from "./model/SheetDataClass.svelte";
 
   type Props = {
-    rows: string[][];
-    columnHeaders: string[];
-    columnMeta: ColumnMeta[];
-    currentPage: number;
-    totalPages: number;
-    totalRows: number;
-    onpage: (page: number) => void;
+    data: SheetDataClass;
   };
 
-  let { rows, columnHeaders, columnMeta, currentPage, totalPages, totalRows, onpage }: Props = $props();
+  let { data }: Props = $props();
 </script>
 
 <div class="mt-2 overflow-x-auto">
   <Table.Root>
     <Table.Header>
       <Table.Row>
-        {#each columnHeaders as _, i}
+        {#each data.sheet.columns as col, i}
           <Table.Head class="border align-top bg-gray-100 dark:bg-gray-900">
-            <ColumnTypeHeader meta={columnMeta[i]} />
+            <ColumnTypeHeader meta={col.dbColumn} />
           </Table.Head>
         {/each}
       </Table.Row>
       <Table.Row>
-        {#each columnHeaders as cell}
-          <Table.Head class="border whitespace-nowrap bg-gray-50 dark:bg-gray-950 font-semibold"
-            >{cell}</Table.Head
-          >
+        {#each data.sheet.columns as col}
+          {#if col.type == "sheet"}
+            <Table.Head
+              class="border whitespace-nowrap bg-gray-50 dark:bg-gray-950 font-semibold"
+              >{col.header}</Table.Head
+            >
+          {/if}
         {/each}
       </Table.Row>
     </Table.Header>
     <Table.Body>
-      {#each rows as row}
+      {#each data.rows as row}
         <Table.Row>
           {#each row as cell}
             <Table.Cell class="whitespace-nowrap border">{cell}</Table.Cell>
@@ -47,5 +45,5 @@
   </Table.Root>
 </div>
 <div class="pr-2 float-right">
-  <Paging {currentPage} {totalPages} {totalRows} {onpage} />
+  <Paging {data} />
 </div>

@@ -5,19 +5,25 @@
   import PgConnect from "$lib/PgConnect.svelte";
   import Workbook from "$lib/Workbook.svelte";
   import ThemeToggle from "$lib/ThemeToggle.svelte";
+  import { WorkbookClass } from "$lib/model/WorkbookClass.svelte";
+  import { DatabaseClass } from "$lib/model/DatabaseClass.svelte";
+  import { setDatabaseContext } from "$lib/model/databaseContext";
 
   let filePath = $state<string | null>(null);
-  let pgConnString = $state<string | null>(null);
-  let dbTables = $state<string[]>([]);
+  let workbook = $state<WorkbookClass | null>(null);
+  let database = new DatabaseClass();
+  setDatabaseContext(database);
 
   async function onFileLoad(fp: string) {
     filePath = fp;
     await invoke("clear_cache");
+    if (filePath) {
+      workbook = new WorkbookClass(filePath);
+    }
   }
 
   async function onConnect(cs: string) {
-    pgConnString = cs;
-    dbTables = await invoke<string[]>("pg_get_tables", { connString: cs });
+    database.connectionString = cs;
   }
 </script>
 
@@ -32,12 +38,14 @@
   </div>
   <div class="mt-3 flex flex-row items-center gap-3">
     <PgConnect onconnect={onConnect} />
-    {#if pgConnString}
+    {#if database.connectionString}
       <code
         class="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded px-1.5 py-0.5 break-all"
-        >{pgConnString}</code
+        >{database.connectionString}</code
       >
     {/if}
   </div>
-  <Workbook {filePath} {dbTables} connString={pgConnString} />
+  {#if workbook}
+    <Workbook {workbook} />
+  {/if}
 </main>

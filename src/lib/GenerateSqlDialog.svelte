@@ -1,57 +1,40 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
   import { Button } from "$lib/components/ui/button";
-  import { type ColumnMeta } from "$lib/pgTypes";
+  import { pgTypeStr, type ColumnMeta } from "$lib/model/pgTypes";
+  import type { SheetClass } from "./model/SheetClass.svelte";
 
   type Props = {
-    tableName: string;
-    columnHeaders: string[];
-    columnMeta: ColumnMeta[];
-    savedConnString?: string | null;
+    sheet: SheetClass;
+    connectionString?: string | null;
     dropTable?: boolean;
   };
 
-  let { tableName, columnHeaders, columnMeta, savedConnString, dropTable = false }: Props = $props();
+  let {
+    sheet,
+    connectionString: savedConnString,
+    dropTable = false,
+  }: Props = $props();
 
   let dialog = $state<HTMLDialogElement | null>(null);
   let connString = $state("");
   let status = $state<{ ok: true } | { ok: false; error: string } | null>(null);
   let executing = $state(false);
 
-  function pgTypeStr(meta: ColumnMeta): string {
-    switch (meta.type) {
-      case "varchar":
-        return meta.length ? `VARCHAR(${meta.length})` : "VARCHAR";
-      case "numeric":
-        if (meta.precision != null && meta.scale != null)
-          return `NUMERIC(${meta.precision}, ${meta.scale})`;
-        if (meta.precision != null) return `NUMERIC(${meta.precision})`;
-        return "NUMERIC";
-      case "timestamp":
-        return meta.precision != null
-          ? `TIMESTAMP(${meta.precision})`
-          : "TIMESTAMP";
-      case "timestamptz":
-        return meta.precision != null
-          ? `TIMESTAMPTZ(${meta.precision})`
-          : "TIMESTAMPTZ";
-      case "double precision":
-        return "DOUBLE PRECISION";
-      default:
-        return meta.type.toUpperCase();
-    }
-  }
-
   let sql = $derived.by(() => {
-    if (!tableName || columnHeaders.length === 0) return "";
-    const cols = columnHeaders.map((h, i) => {
-      const name = columnMeta[i]?.name || h.replaceAll(" ", "_") || `col_${i + 1}`;
-      const type = pgTypeStr(columnMeta[i] ?? { type: "text" });
-      return `  "${name}" ${type}`;
+    if (!sheet.tableName || sheet.columns.length === 0) return "";
+    const cols = sheet.columns.map((h, i) => {
+      if (h.dbColumn.name) {
+        const name = h.dbColumn.name;
+        const type = pgTypeStr(h.dbColumn);
+        return `  "${name}" ${type}`;
+      } else {
+        return "";
+      }
     });
-    const create = `CREATE TABLE "${tableName}" (\n${cols.join(",\n")}\n);`;
+    const create = `CREATE TABLE "${sheet.tableName}" (\n${cols.join(",\n")}\n);`;
     return dropTable
-      ? `DROP TABLE IF EXISTS "${tableName}";\n${create}`
+      ? `DROP TABLE IF EXISTS "${sheet.tableName}";\n${create}`
       : create;
   });
 

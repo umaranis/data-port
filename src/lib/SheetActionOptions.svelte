@@ -1,74 +1,50 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
-  import { SheetClass } from "$lib/WorkbookClass.svelte.js";
-  import InferTypesButton from "$lib/InferTypesButton.svelte";
+  import { SheetClass } from "$lib/model/SheetClass.svelte";
+  import { type InsertStatus } from "$lib/model/SheetDataClass.svelte";
   import GenerateSqlDialog from "$lib/GenerateSqlDialog.svelte";
-  import type { ColumnMeta } from "./pgTypes";
+  import type { ColumnMeta } from "./model/pgTypes";
   import { Button } from "$lib/components/ui/button";
+  import { getDatabaseContext } from "./model/databaseContext";
 
   type Props = {
     sheet: SheetClass;
-    dbTables: string[];
-    filePath: string | null;
-    savedConnString?: string | null;
-    oninfer: (types: ColumnMeta[]) => void;
   };
 
-  let {
-    sheet,
-    dbTables,
-    filePath,
-    savedConnString,
-    oninfer,
-  }: Props = $props();
+  let { sheet }: Props = $props();
 
   let sqlDialog = $state<GenerateSqlDialog | null>(null);
+  let database = getDatabaseContext();
 
   $effect(() => {
     if (sheet.action === "append") {
-      const match = dbTables.find(
+      const match = database.tables.find(
         (t) => t === sheet.tableName || t.split(".").pop() === sheet.tableName,
       );
       sheet.tableName = match ?? "";
     }
   });
 
-  type InsertStatus =
-    | { ok: true; count: number }
-    | { ok: false; error: string }
-    | null;
-  let insertStatus = $state<InsertStatus>(null);
+  let insertStatus = $state<InsertStatus | null>(null);
   let inserting = $state(false);
 
-  async function insertRows(targetTable: string) {
-    if (!filePath || !sheet.name || !savedConnString || !targetTable) return;
-    const columnNames = sheet.columnMeta.map((m) => m.name ?? "");
-    if (columnNames.some((n) => n === "")) {
+  async function insertRows() {
+    if (!sheet.loaded || !sheet.tableName || !database.connectionString) return;
+
+    const anyBlankColumnName = sheet.columns.find((c, i) => {
+      !c.dbColumn.name;
+    });
+    if (anyBlankColumnName) {
       insertStatus = {
-        ok: false,
+        success: false,
         error: "All column names must be set before inserting.",
       };
       return;
     }
     inserting = true;
     insertStatus = null;
-    try {
-      const count = await invoke<number>("pg_insert_rows", {
-        connString: savedConnString,
-        path: filePath,
-        sheet: sheet.name,
-        tableName: targetTable,
-        columnTypes: sheet.columnMeta.map((m) => m.type),
-        columnNames,
-        headerRow: sheet.headerRow,
-        skipRows: sheet.skipRows,
-      });
-      insertStatus = { ok: true, count };
-    } catch (e) {
-      insertStatus = { ok: false, error: String(e) };
-    } finally {
-      inserting = false;
-    }
+    insertStatus = await sheet.data.insertAllRows(database);
+    inserting = false;
   }
 </script>
 
@@ -84,11 +60,15 @@
         bind:value={sheet.tableName}
         class="border rounded px-2 py-1 text-sm w-48"
       />
-      <InferTypesButton {filePath} sheet={sheet.name} headerRow={sheet.headerRow} skipRows={sheet.skipRows} {oninfer} />
       <Button
         variant="outline"
         size="sm"
-        disabled={sheet.headers.length === 0}
+        onclick={() => sheet.inferColumnTypes()}>Infer types</Button
+      >
+      <Button
+        variant="outline"
+        size="sm"
+        disabled={sheet.columns.length === 0}
         onclick={() => sqlDialog?.open()}
       >
         Generate SQL
@@ -96,19 +76,19 @@
       <Button
         variant="outline"
         size="sm"
-        disabled={!savedConnString || !sheet.tableName || inserting}
-        onclick={() => insertRows(sheet.tableName)}
+        disabled={!database.connectionString || !sheet.tableName || inserting}
+        onclick={() => insertRows()}
       >
         {inserting ? "Inserting…" : "Insert rows"}
       </Button>
     </div>
     {#if insertStatus}
       <p
-        class="text-xs px-1 {insertStatus.ok
+        class="text-xs px-1 {insertStatus.success
           ? 'text-green-700 dark:text-green-400'
           : 'text-red-700 dark:text-red-400'}"
       >
-        {insertStatus.ok
+        {insertStatus.success
           ? `${insertStatus.count} rows inserted.`
           : insertStatus.error}
       </p>
@@ -116,10 +96,8 @@
   </div>
   <GenerateSqlDialog
     bind:this={sqlDialog}
-    tableName={sheet.tableName}
-    columnHeaders={sheet.headers}
-    columnMeta={sheet.columnMeta}
-    {savedConnString}
+    {sheet}
+    connectionString={database.connectionString}
     dropTable={sheet.action === "recreate"}
   />
 {:else if sheet.action === "append"}
@@ -128,7 +106,7 @@
       <label for="append-table" class="text-sm whitespace-nowrap"
         >Append to table:</label
       >
-      {#if dbTables.length === 0}
+      {#if database.tables.length === 0}
         <span class="text-sm text-gray-400">No tables found</span>
       {:else}
         <select
@@ -137,7 +115,7 @@
           class="border rounded px-2 py-1 text-sm dark:bg-gray-800 dark:border-gray-600"
         >
           <option value="">— none —</option>
-          {#each dbTables as t}
+          {#each database.tables as t}
             <option value={t}>{t}</option>
           {/each}
         </select>
@@ -145,19 +123,19 @@
       <Button
         variant="outline"
         size="sm"
-        disabled={!savedConnString || !sheet.tableName || inserting}
-        onclick={() => insertRows(sheet.tableName)}
+        disabled={!database.connectionString || !sheet.tableName || inserting}
+        onclick={() => insertRows()}
       >
         {inserting ? "Inserting…" : "Insert rows"}
       </Button>
     </div>
     {#if insertStatus}
       <p
-        class="text-xs px-1 {insertStatus.ok
+        class="text-xs px-1 {insertStatus.success
           ? 'text-green-700 dark:text-green-400'
           : 'text-red-700 dark:text-red-400'}"
       >
-        {insertStatus.ok
+        {insertStatus.success
           ? `${insertStatus.count} rows inserted.`
           : insertStatus.error}
       </p>

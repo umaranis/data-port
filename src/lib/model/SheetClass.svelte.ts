@@ -1,0 +1,123 @@
+import { invoke } from "@tauri-apps/api/core";
+import type { WorkbookClass } from "./WorkbookClass.svelte";
+import { convertToDBFriendlyName, type ColumnMeta } from "$lib/model/pgTypes";
+import { type SheetColumn } from "./SheetColumnClass.svelte";
+import { SheetDataClass } from "./SheetDataClass.svelte";
+
+export type SheetAction = "create" | "append" | "recreate" | "skip";
+
+export class SheetClass {
+  public name: string;
+  private _workbook: WorkbookClass;
+  public get workbook(): WorkbookClass {
+    return this._workbook;
+  }
+  public tableName: string;
+
+  private _data = new SheetDataClass(this);
+  public get data(): SheetDataClass {
+    return this._data;
+  }
+
+  constructor(name: string, workbook: WorkbookClass) {
+    this.name = name;
+    this._workbook = workbook;
+    this.tableName = $state(name.toLocaleLowerCase().replaceAll(" ", "_"));
+  }
+
+  private _loaded: boolean = $state(false);
+  public get loaded(): boolean {
+    return this._loaded;
+  }
+
+  public action: SheetAction = $state("create");
+
+  private _headerRow: number = $state(0);
+  /**  0 indexed */
+  public get headerRow(): number {
+    return this._headerRow;
+  }
+  /** Clears `skipRows` since row numbers will change */
+  public setHeaderRow(value: number) {
+    this._headerRow = value;
+    this._skipRows = [];
+    this.loadSheet();
+  }
+
+  private _skipRows: number[] = $state([]);
+  public get skipRows(): number[] {
+    return this._skipRows;
+  }
+  public set skipRows(value: number[]) {
+    this._skipRows = value;
+    this.data.loadPage(0);
+  }
+
+  // start: columns list
+
+  private _columns: Readonly<SheetColumn>[] = $state([]);
+  // columns from the sheet appear first
+  public get columns(): ReadonlyArray<Readonly<SheetColumn>> {
+    return this._columns;
+  }
+  private setColumns(headers: string[]) {
+    this._columns = headers.map((h) => ({
+      type: "sheet",
+      header: h,
+      dbColumn: {
+        type: "text",
+        name: convertToDBFriendlyName(h),
+      },
+      excluded: false,
+    }));
+  }
+
+  // null if sheet action is 'create', may or may not be null if 'append'
+  // if not null, then sheet dbColumn must match with dbColumns or dbColumn.name is null
+  private dbColumns: ReadonlyArray<Readonly<ColumnMeta>> | null = null;
+
+  //end: columns list
+
+  public async loadSheet() {
+    this._loaded = false;
+    const headers = await invoke<string[]>("get_sheet_header", {
+      path: this.workbook.filePath,
+      sheet: this.name,
+      headerRow: this.headerRow,
+    });
+
+    this.setColumns(headers);
+
+    this.data.loadPage(0);
+
+    this._loaded = true;
+  }
+
+  public async inferColumnTypes() {
+    const types = await invoke<ColumnMeta[]>("infer_column_types", {
+      path: this.workbook.filePath,
+      sheet: this.name,
+      headerRow: this.headerRow,
+      skipRows: this.skipRows,
+    });
+
+    types.forEach((type, index) => {
+      if (index < this._columns.length) {
+        const col = this._columns[index];
+        col.dbColumn;
+        if (col.type === "sheet") {
+          this._columns[index] = {
+            ...col,
+            dbColumn: {
+              ...col.dbColumn,
+              type: type.type,
+              length: type.length,
+              precision: type.precision,
+              scale: type.scale,
+            },
+          };
+        }
+      }
+    });
+  }
+}

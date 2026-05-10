@@ -14,16 +14,14 @@ export function parseSkipInput(input: string): number[] {
   return Array.from(result);
 }
 
-export function serializeSkipInput(nums: Set<number>): string {
-  const sorted = [...nums].sort((a, b) => a - b);
+export function serializeSkipInput(nums: Array<number>): string {
   const parts: string[] = [];
   let i = 0;
-  while (i < sorted.length) {
+  while (i < nums.length) {
     let j = i;
-    while (j + 1 < sorted.length && sorted[j + 1] === sorted[j] + 1) j++;
-    parts.push(j > i ? `${sorted[i]}-${sorted[j]}` : `${sorted[i]}`);
+    while (j + 1 < nums.length && nums[j + 1] === nums[j] + 1) j++;
+    parts.push(j > i ? `${nums[i]}-${nums[j]}` : `${nums[i]}`);
     i = j + 1;
   }
   return parts.join(",");
 }
-
