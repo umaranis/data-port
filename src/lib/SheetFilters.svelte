@@ -72,6 +72,7 @@
     if (blank.length === 0) return;
     const merged = new Set([...parseSkipInput(input), ...blank]);
     input = serializeSkipInput(merged);
+    applyFilters();
   }
 </script>
 
@@ -95,14 +96,25 @@
   <label for="skip-rows" class="text-sm whitespace-nowrap ml-2"
     >Skip rows:</label
   >
-  <input
-    id="skip-rows"
-    type="text"
-    bind:value={input}
-    onkeydown={(e) => e.key === "Enter" && hasChanges && applyFilters()}
-    placeholder="e.g. 1,3,5-10"
-    class="border rounded px-2 py-1 text-sm w-48"
-  />
+  <div class="relative">
+    <input
+      id="skip-rows"
+      type="text"
+      bind:value={input}
+      onkeydown={(e) => e.key === "Enter" && hasChanges && applyFilters()}
+      onchange={() => hasChanges && applyFilters()}
+      placeholder="e.g. 1,3,5-10"
+      class="border rounded px-2 py-1 text-sm w-48 {input ? 'pr-6' : ''}"
+    />
+    {#if input}
+      <button
+        type="button"
+        onclick={() => { input = ""; applyFilters(); }}
+        class="absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 leading-none"
+        aria-label="Clear"
+      >×</button>
+    {/if}
+  </div>
   <Button variant="outline" size="sm" onclick={findBlankRows}>
     Find blank rows
   </Button>
