@@ -39,8 +39,10 @@ export async function mockTauriIpc(page: Page, config: MockConfig = {}) {
           case "get_sheets":
             return Promise.resolve(cfg.sheetNames ?? ["Sheet1", "Sheet2"]);
 
-          case "get_sheet_header":
-            return Promise.resolve(cfg.sheetRows?.[0] ?? []);
+          case "get_sheet_header": {
+            const hr: number = (args as any)?.headerRow ?? 0;
+            return Promise.resolve(cfg.sheetRows?.[hr] ?? []);
+          }
 
           case "get_sheet_rows_paged":
           case "get_sheet_rows_paged_filtered":
