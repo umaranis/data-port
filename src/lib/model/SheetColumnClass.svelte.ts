@@ -1,35 +1,59 @@
-import type { ColumnMeta } from "./pgTypes";
+import type { PgType } from "./pgTypes";
 
 export type SheetColumn =
   | {
       type: "sheet";
       readonly header: string;
-      readonly dbColumn: ColumnMeta;
+      pgType: PgType;
+      name?: string;
+      length?: number;
+      precision?: number;
+      scale?: number;
       excluded: boolean;
     }
   | {
       type: "duplicate"; // one sheet header mapped to multiple db table columns
       readonly header: string;
-      readonly dbColumn: ColumnMeta;
+      pgType: PgType;
+      name?: string;
+      length?: number;
+      precision?: number;
+      scale?: number;
     }
   | {
       type: "static";
       text: string | null;
-      readonly dbColumn: ColumnMeta;
+      pgType: PgType;
+      name?: string;
+      length?: number;
+      precision?: number;
+      scale?: number;
     }
   | {
       type: "formula";
-      dbColumn: ColumnMeta;
+      pgType: PgType;
+      name?: string;
+      length?: number;
+      precision?: number;
+      scale?: number;
       formula: string | null;
     }
   | {
       type: "db-serial";
-      dbColumn: ColumnMeta;
+      pgType: PgType;
+      name?: string;
+      length?: number;
+      precision?: number;
+      scale?: number;
       dbSequenceName: string | null;
     }
   | {
       type: "custom-sequence";
-      dbColumn: ColumnMeta;
+      pgType: PgType;
+      name?: string;
+      length?: number;
+      precision?: number;
+      scale?: number;
       sequenceStart: number | null;
       padding: number | null;
       prefix: string | null;

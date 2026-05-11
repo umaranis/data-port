@@ -2,7 +2,6 @@
   import * as Table from "$lib/components/ui/table";
   import Paging from "$lib/Paging.svelte";
   import ColumnTypeHeader from "$lib/ColumnTypeHeader.svelte";
-  import { type ColumnMeta } from "$lib/model/pgTypes";
   import type { SheetDataClass } from "./model/SheetDataClass.svelte";
 
   type Props = {
@@ -18,7 +17,7 @@
       <Table.Row>
         {#each data.sheet.columns as col, i}
           <Table.Head class="border align-top bg-gray-100 dark:bg-gray-900">
-            <ColumnTypeHeader meta={col.dbColumn} />
+            <ColumnTypeHeader meta={col} />
           </Table.Head>
         {/each}
       </Table.Row>

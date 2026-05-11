@@ -1,7 +1,6 @@
 <script lang="ts">
   import * as Table from "$lib/components/ui/table";
   import ColumnTypeHeader from "./ColumnTypeHeader.svelte";
-  import { type ColumnMeta } from "$lib/model/pgTypes";
   import type { SheetClass } from "./model/SheetClass.svelte";
 
   type Props = {
@@ -40,7 +39,7 @@
                 >{column.header}</Table.Cell
               >
               <Table.Cell class="border">
-                <ColumnTypeHeader meta={column.dbColumn} />
+                <ColumnTypeHeader meta={column} />
               </Table.Cell>
             </Table.Row>
           {/if}

@@ -48,8 +48,13 @@ export function convertToDBFriendlyName(name: string) {
     .replaceAll(/[^a-z0-9_]/g, "");
 }
 
-export function pgTypeStr(meta: ColumnMeta): string {
-  switch (meta.type) {
+export function pgTypeStr(meta: {
+  pgType: PgType;
+  length?: number;
+  precision?: number;
+  scale?: number;
+}): string {
+  switch (meta.pgType) {
     case "varchar":
       return meta.length ? `VARCHAR(${meta.length})` : "VARCHAR";
     case "numeric":
@@ -68,6 +73,6 @@ export function pgTypeStr(meta: ColumnMeta): string {
     case "double precision":
       return "DOUBLE PRECISION";
     default:
-      return meta.type.toUpperCase();
+      return meta.pgType.toUpperCase();
   }
 }

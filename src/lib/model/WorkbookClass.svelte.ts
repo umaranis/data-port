@@ -48,11 +48,11 @@ export class WorkbookClass extends AsyncResource {
       path: wb.filePath,
     });
     wb.sheets = sheetNames.map((n) => new SheetClass(n, wb));
-
-    wb.sheets = project.sheets.map((s) => new SheetClass(s.name, wb));
     wb.applySnapshot(project.sheets);
-
-    wb.selectedSheet = wb.sheets[0] ?? null;
+    const s = wb.sheets[0];
+    if (s) {
+      wb._selectedSheet = s;
+    }
     return wb;
   }
 

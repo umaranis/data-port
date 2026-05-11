@@ -59,20 +59,19 @@ export class SheetClass {
       const dbCols = await db.loadDbColumns(this.tableName);
 
       this.dbColumns = dbCols;
-      this.columns.forEach((col, index) => {
-        if (col.dbColumn.name) {
-          const matchingDbCol = dbCols.find((dbCol) => {
-            return dbCol.name == col.dbColumn.name;
-          });
-          if (matchingDbCol) {
-            col.dbColumn.type = matchingDbCol.type;
-            col.dbColumn.length = matchingDbCol.length;
-            col.dbColumn.precision = matchingDbCol.precision;
-            col.dbColumn.scale = matchingDbCol.scale;
-          } else {
-            col.dbColumn.name = undefined;
-          }
+      this._columns = this._columns.map((col) => {
+        if (!col.name) return col;
+        const matchingDbCol = dbCols.find((dbCol) => dbCol.name === col.name);
+        if (matchingDbCol) {
+          return {
+            ...col,
+            pgType: matchingDbCol.type,
+            length: matchingDbCol.length,
+            precision: matchingDbCol.precision,
+            scale: matchingDbCol.scale,
+          };
         }
+        return { ...col, name: undefined };
       });
     }
   }
@@ -98,8 +97,6 @@ export class SheetClass {
     this.data.loadPage(0);
   }
 
-  // start: columns list
-
   private _columns: Readonly<SheetColumn>[] = $state([]);
   // columns from the sheet appear first
   public get columns(): ReadonlyArray<Readonly<SheetColumn>> {
@@ -109,35 +106,41 @@ export class SheetClass {
     this._columns = headers.map((h) => ({
       type: "sheet",
       header: h,
-      dbColumn: {
-        type: "text",
-        name: convertToDBFriendlyName(h),
-      },
+      pgType: "text",
+      name: convertToDBFriendlyName(h),
       excluded: false,
     }));
   }
 
   // null if sheet action is 'create', may or may not be null if 'append'
-  // if not null, then sheet dbColumn must match with dbColumns or dbColumn.name is null
+  // if not null, then sheet column name must match with dbColumns or column name is undefined
   private dbColumns: ReadonlyArray<Readonly<ColumnMeta>> | null = null;
 
-  //end: columns list
-
-  public applySnapshot(s: ProjectSheet) {
+  public async applySnapshot(s: ProjectSheet) {
     this._action = s.action;
     this.tableName = s.tableName;
     this._headerRow = s.headerRow;
     this._skipRows = s.skipRows;
-    this._columns = s.columns as Readonly<SheetColumn>[];
+    await this.loadSheet();
+    this._columns = this._columns.map((col) => {
+      const saved = s.columns.find(
+        (sc) =>
+          sc.type === "sheet" &&
+          col.type === "sheet" &&
+          sc.header === col.header,
+      );
+      return saved ? { ...col, ...saved } : col;
+    });
+    // load additional columns
+    s.columns.forEach((col) => {
+      if (col.type !== "sheet") {
+        this._columns.push(col);
+      }
+    });
   }
 
   public async loadSheet() {
     this._loaded = false;
-    console.log("[SheetClass] get_sheet_header", {
-      path: this.workbook.filePath,
-      sheet: this.name,
-      headerRow: this.headerRow,
-    });
     const headers = await invoke<string[]>("get_sheet_header", {
       path: this.workbook.filePath,
       sheet: this.name,
@@ -162,17 +165,13 @@ export class SheetClass {
     types.forEach((type, index) => {
       if (index < this._columns.length) {
         const col = this._columns[index];
-        col.dbColumn;
         if (col.type === "sheet") {
           this._columns[index] = {
             ...col,
-            dbColumn: {
-              ...col.dbColumn,
-              type: type.type,
-              length: type.length,
-              precision: type.precision,
-              scale: type.scale,
-            },
+            pgType: type.type,
+            length: type.length,
+            precision: type.precision,
+            scale: type.scale,
           };
         }
       }
