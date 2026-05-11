@@ -13,7 +13,6 @@
   import { Button } from "$lib/components/ui/button";
   import type { Project, ProjectSheet } from "$lib/model/projectTypes";
 
-  let filePath = $state<string | null>(null);
   let workbook = $state<WorkbookClass | null>(null);
   let database = new DatabaseClass();
   setDatabaseContext(database);
@@ -22,30 +21,19 @@
   let saveOpen = $state(false);
   let loadList = $state<LoadProjectList | null>(null);
 
-  // Applied after workbook sheets load when restoring from a saved project
-  let pendingSnapshot = $state<ProjectSheet[] | null>(null);
-
-  $effect(() => {
-    if (workbook && workbook.sheets.length > 0 && pendingSnapshot) {
-      workbook.applySnapshot(pendingSnapshot);
-      pendingSnapshot = null;
-    }
-  });
-
   function currentProject(): Project {
     return {
       name: projectName,
-      filePath: workbook?.filePath ?? filePath ?? "",
+      filePath: workbook?.filePath ?? "",
       connectionString: database.connectionString,
       sheets: workbook?.toSnapshot() ?? [],
     };
   }
 
   async function onFileLoad(fp: string) {
-    filePath = fp;
     await invoke("clear_cache");
-    if (filePath) {
-      workbook = new WorkbookClass(filePath);
+    if (fp) {
+      workbook = WorkbookClass.create(fp);
     }
   }
 
@@ -57,9 +45,7 @@
     projectName = project.name;
     await invoke("clear_cache");
     database.connectionString = project.connectionString;
-    filePath = project.filePath;
-    pendingSnapshot = project.sheets;
-    workbook = new WorkbookClass(project.filePath);
+    workbook = await WorkbookClass.deserialize(project);
   }
 
   function onProjectSaved(name: string) {

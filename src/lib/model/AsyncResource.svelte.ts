@@ -7,13 +7,11 @@ export class AsyncResource {
     this.error = null;
     this.loading = true;
 
-    loader()
+    return loader()
       .catch((e) => {
         this.error = String(e);
         console.error("Error loading data:", e); //TODO: add tauri logging
       })
       .finally(() => (this.loading = false));
-
-    return;
   }
 }
