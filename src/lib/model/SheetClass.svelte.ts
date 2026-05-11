@@ -60,8 +60,8 @@ export class SheetClass {
 
       this.dbColumns = dbCols;
       this._columns = this._columns.map((col) => {
-        if (!col.name) return col;
-        const matchingDbCol = dbCols.find((dbCol) => dbCol.name === col.name);
+        if (!col.dbColumnName) return col;
+        const matchingDbCol = dbCols.find((dbCol) => dbCol.name === col.dbColumnName);
         if (matchingDbCol) {
           return {
             ...col,
@@ -71,7 +71,7 @@ export class SheetClass {
             scale: matchingDbCol.scale,
           };
         }
-        return { ...col, name: undefined };
+        return { ...col, dbColumnName: undefined };
       });
     }
   }
@@ -107,7 +107,7 @@ export class SheetClass {
       type: "sheet",
       header: h,
       pgType: "text",
-      name: convertToDBFriendlyName(h),
+      dbColumnName: convertToDBFriendlyName(h),
       excluded: false,
     }));
   }

@@ -24,8 +24,8 @@
   let sql = $derived.by(() => {
     if (!sheet.tableName || sheet.columns.length === 0) return "";
     const cols = sheet.columns.map((h) => {
-      if (h.name) {
-        const name = h.name;
+      if (h.dbColumnName) {
+        const name = h.dbColumnName;
         const type = pgTypeStr(h);
         return `  "${name}" ${type}`;
       } else {

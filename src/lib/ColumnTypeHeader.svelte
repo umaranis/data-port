@@ -4,7 +4,7 @@
 
   type DbMeta = {
     pgType: PgType;
-    name?: string;
+    dbColumnName?: string;
     length?: number;
     precision?: number;
     scale?: number;
@@ -19,7 +19,7 @@
 <div class="flex flex-col gap-1 py-1 min-w-27.5">
   <input
     type="text"
-    bind:value={meta.name}
+    bind:value={meta.dbColumnName}
     class="text-xs font-normal border rounded px-1 py-0.5 w-full dark:bg-gray-800 dark:border-gray-600"
   />
   <Select.Root
