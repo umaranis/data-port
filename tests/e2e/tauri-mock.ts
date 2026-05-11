@@ -13,6 +13,8 @@ export type MockConfig = {
   dbTables?: string[];
   /** Row count returned by pg_insert_rows. */
   insertedRows?: number;
+  /** Columns returned by pg_get_columns. */
+  dbColumns?: { dbColName: string; dataType: string }[];
   /** Row indices returned by get_blank_rows. */
   blankRows?: number[];
   /** Project names returned by list_projects. */
@@ -58,7 +60,7 @@ export async function mockTauriIpc(page: Page, config: MockConfig = {}) {
             return Promise.resolve(cfg.insertedRows ?? 0);
 
           case "pg_get_columns":
-            return Promise.resolve([]);
+            return Promise.resolve(cfg.dbColumns ?? []);
 
           case "plugin:dialog|open":
             return Promise.resolve(cfg.selectedFile ?? null);

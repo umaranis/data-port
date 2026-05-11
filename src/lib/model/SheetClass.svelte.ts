@@ -55,6 +55,10 @@ export class SheetClass {
       (t) => t === this.tableName || t.split(".").pop() === this.tableName,
     );
     this.tableName = match ?? null;
+    await this.reMatchColumnsWithDB(db);
+  }
+
+  private async reMatchColumnsWithDB(db: DatabaseClass) {
     if (this.tableName) {
       const dbCols = await db.loadDbColumns(this.tableName);
 
