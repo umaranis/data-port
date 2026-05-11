@@ -26,7 +26,7 @@ export class SheetDataClass extends AsyncResource {
 
   async loadPage(page: number) {
     this.load(async () => {
-      await this._loadPage(page);
+      this._loadPage(page);
     });
   }
 

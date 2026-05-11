@@ -12,7 +12,7 @@
 
   let { sheet }: Props = $props();
 
-  let headerRowInput = $state(1);
+  let headerRowInput = $derived(sheet.headerRow + 1); // 1-based for user input
   let confirmDialogOpen = $state(false);
 
   let inputSkipRows = $state("");
@@ -34,8 +34,10 @@
 
   function applyHeaderRow(newHeaderRow: number) {
     if (newHeaderRow !== sheet.headerRow) {
-      inputSkipRows = "";
-      applySkipRows();
+      if (sheet.skipRows.length > 0) {
+        inputSkipRows = "";
+        applySkipRows();
+      }
     }
     sheet.setHeaderRow(newHeaderRow);
     confirmDialogOpen = false;

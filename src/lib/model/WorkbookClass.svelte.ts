@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { SheetClass } from "./SheetClass.svelte";
 import { AsyncResource } from "./AsyncResource.svelte";
 import { DatabaseClass } from "./DatabaseClass.svelte";
+import type { ProjectSheet } from "./projectTypes";
 
 export class WorkbookClass extends AsyncResource {
   public filePath: string;
@@ -15,6 +16,24 @@ export class WorkbookClass extends AsyncResource {
     this._selectedSheet = value;
     if (value && !value.loaded) {
       value.loadSheet();
+    }
+  }
+
+  toSnapshot(): ProjectSheet[] {
+    return this.sheets.map((s) => ({
+      name: s.name,
+      action: s.action,
+      tableName: s.tableName,
+      headerRow: s.headerRow,
+      skipRows: s.skipRows,
+      columns: [...s.columns],
+    }));
+  }
+
+  applySnapshot(saved: ProjectSheet[]) {
+    for (const data of saved) {
+      const sheet = this.sheets.find((s) => s.name === data.name);
+      if (sheet) sheet.applySnapshot(data);
     }
   }
 

@@ -5,14 +5,41 @@
   import PgConnect from "$lib/PgConnect.svelte";
   import Workbook from "$lib/Workbook.svelte";
   import ThemeToggle from "$lib/ThemeToggle.svelte";
+  import SaveProjectDialog from "$lib/SaveProjectDialog.svelte";
+  import LoadProjectList from "$lib/LoadProjectList.svelte";
   import { WorkbookClass } from "$lib/model/WorkbookClass.svelte";
   import { DatabaseClass } from "$lib/model/DatabaseClass.svelte";
   import { setDatabaseContext } from "$lib/model/databaseContext";
+  import { Button } from "$lib/components/ui/button";
+  import type { Project, ProjectSheet } from "$lib/model/projectTypes";
 
   let filePath = $state<string | null>(null);
   let workbook = $state<WorkbookClass | null>(null);
   let database = new DatabaseClass();
   setDatabaseContext(database);
+
+  let projectName = $state("");
+  let saveOpen = $state(false);
+  let loadList = $state<LoadProjectList | null>(null);
+
+  // Applied after workbook sheets load when restoring from a saved project
+  let pendingSnapshot = $state<ProjectSheet[] | null>(null);
+
+  $effect(() => {
+    if (workbook && workbook.sheets.length > 0 && pendingSnapshot) {
+      workbook.applySnapshot(pendingSnapshot);
+      pendingSnapshot = null;
+    }
+  });
+
+  function currentProject(): Project {
+    return {
+      name: projectName,
+      filePath: workbook?.filePath ?? filePath ?? "",
+      connectionString: database.connectionString,
+      sheets: workbook?.toSnapshot() ?? [],
+    };
+  }
 
   async function onFileLoad(fp: string) {
     filePath = fp;
@@ -25,12 +52,38 @@
   async function onConnect(cs: string) {
     database.connectionString = cs;
   }
+
+  async function onLoadProject(project: Project) {
+    projectName = project.name;
+    await invoke("clear_cache");
+    database.connectionString = project.connectionString;
+    filePath = project.filePath;
+    pendingSnapshot = project.sheets;
+    workbook = new WorkbookClass(project.filePath);
+  }
+
+  function onProjectSaved(name: string) {
+    projectName = name;
+    loadList?.refresh();
+  }
 </script>
 
 <main class="flex flex-col items-left pt-[10vh] px-4">
   <div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-bold">Data Port</h1>
-    <ThemeToggle />
+    <h1 class="text-2xl font-bold">
+      Data Port{#if projectName}<span
+          class="text-base font-normal text-gray-500 ml-2">— {projectName}</span
+        >{/if}
+    </h1>
+    <div class="flex items-center gap-2">
+      <LoadProjectList bind:this={loadList} onload={onLoadProject} />
+      {#if workbook}
+        <Button variant="outline" size="sm" onclick={() => (saveOpen = true)}>
+          Save project
+        </Button>
+      {/if}
+      <ThemeToggle />
+    </div>
   </div>
   <div class="flex flex-row items-center gap-3">
     <FileSelector onload={onFileLoad} />
@@ -49,3 +102,10 @@
     <Workbook {workbook} />
   {/if}
 </main>
+
+<SaveProjectDialog
+  bind:open={saveOpen}
+  {projectName}
+  getProject={currentProject}
+  onsaved={onProjectSaved}
+/>

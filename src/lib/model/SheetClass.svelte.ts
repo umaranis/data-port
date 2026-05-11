@@ -4,6 +4,7 @@ import { convertToDBFriendlyName, type ColumnMeta } from "$lib/model/pgTypes";
 import { type SheetColumn } from "./SheetColumnClass.svelte";
 import { SheetDataClass } from "./SheetDataClass.svelte";
 import type { DatabaseClass } from "./DatabaseClass.svelte";
+import type { ProjectSheet } from "./projectTypes";
 
 export type SheetAction = "create" | "append" | "recreate" | "skip";
 
@@ -122,8 +123,21 @@ export class SheetClass {
 
   //end: columns list
 
+  public applySnapshot(s: ProjectSheet) {
+    this._action = s.action;
+    this.tableName = s.tableName;
+    this._headerRow = s.headerRow;
+    this._skipRows = s.skipRows;
+    this._columns = s.columns as Readonly<SheetColumn>[];
+  }
+
   public async loadSheet() {
     this._loaded = false;
+    console.log("[SheetClass] get_sheet_header", {
+      path: this.workbook.filePath,
+      sheet: this.name,
+      headerRow: this.headerRow,
+    });
     const headers = await invoke<string[]>("get_sheet_header", {
       path: this.workbook.filePath,
       sheet: this.name,

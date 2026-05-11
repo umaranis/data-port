@@ -16,10 +16,12 @@ export class DatabaseClass extends AsyncResource {
           connString: this.connectionString,
         }).then((tables) => {
           this._tables = tables;
+          this._dbColumns.clear();
         });
       });
     } else {
       this._tables = [];
+      this._dbColumns.clear();
     }
   }
 

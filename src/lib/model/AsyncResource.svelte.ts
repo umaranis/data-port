@@ -3,6 +3,7 @@ export class AsyncResource {
   public loading = $state(false);
 
   protected load(loader: () => Promise<void>) {
+    if (this.loading) return;
     this.error = null;
     this.loading = true;
 

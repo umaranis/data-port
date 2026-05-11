@@ -1,5 +1,6 @@
 mod db;
 mod infer;
+mod project;
 
 use calamine::{open_workbook_auto, Data, Range, Reader};
 use std::collections::HashMap;
@@ -206,7 +207,10 @@ pub fn run() {
       db::pg_get_tables,
       db::pg_execute,
       db::pg_insert_rows,
-      db::pg_get_columns
+      db::pg_get_columns,
+      project::save_project,
+      project::list_projects,
+      project::load_project
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
