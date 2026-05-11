@@ -1,61 +1,39 @@
 import type { PgType } from "./pgTypes";
 
+type DbColumn = {
+  pgType: PgType;
+  name?: string;
+  length?: number;
+  precision?: number;
+  scale?: number;
+};
+
 export type SheetColumn =
-  | {
+  | ({
       type: "sheet";
       readonly header: string;
-      pgType: PgType;
-      name?: string;
-      length?: number;
-      precision?: number;
-      scale?: number;
       excluded: boolean;
-    }
-  | {
-      type: "duplicate"; // one sheet header mapped to multiple db table columns
+    } & DbColumn)
+  | ({
+      type: "duplicate";
       readonly header: string;
-      pgType: PgType;
-      name?: string;
-      length?: number;
-      precision?: number;
-      scale?: number;
-    }
-  | {
+    } & DbColumn)
+  | ({
       type: "static";
       text: string | null;
-      pgType: PgType;
-      name?: string;
-      length?: number;
-      precision?: number;
-      scale?: number;
-    }
-  | {
+    } & DbColumn)
+  | ({
       type: "formula";
-      pgType: PgType;
-      name?: string;
-      length?: number;
-      precision?: number;
-      scale?: number;
       formula: string | null;
-    }
-  | {
+    } & DbColumn)
+  | ({
       type: "db-serial";
-      pgType: PgType;
-      name?: string;
-      length?: number;
-      precision?: number;
-      scale?: number;
       dbSequenceName: string | null;
-    }
-  | {
+    } & DbColumn)
+  | ({
       type: "custom-sequence";
-      pgType: PgType;
-      name?: string;
-      length?: number;
-      precision?: number;
-      scale?: number;
       sequenceStart: number | null;
       padding: number | null;
       prefix: string | null;
       postfix: string | null;
-    };
+    } & DbColumn);
