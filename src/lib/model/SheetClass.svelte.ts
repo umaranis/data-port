@@ -61,7 +61,7 @@ export class SheetClass {
       this.dbColumns = dbCols;
       this._columns = this._columns.map((col) => {
         if (!col.dbColName) return col;
-        const matchingDbCol = dbCols.find((dbCol) => dbCol.name === col.dbColName);
+        const matchingDbCol = dbCols.find((dbCol) => dbCol.dbColName === col.dbColName);
         if (matchingDbCol) {
           return {
             ...col,
