@@ -3,7 +3,7 @@
   import { PG_TYPES, TYPE_MODIFIERS, type PgType } from "$lib/model/pgTypes";
 
   type DbMeta = {
-    pgType: PgType;
+    dataType: PgType;
     dbColName?: string;
     length?: number;
     precision?: number;
@@ -13,7 +13,7 @@
   type Props = { meta: DbMeta };
   let { meta }: Props = $props();
 
-  let modifiers = $derived(TYPE_MODIFIERS[meta.pgType] ?? {});
+  let modifiers = $derived(TYPE_MODIFIERS[meta.dataType] ?? {});
 </script>
 
 <div class="flex flex-col gap-1 py-1 min-w-27.5">
@@ -24,13 +24,13 @@
   />
   <Select.Root
     type="single"
-    value={meta.pgType}
+    value={meta.dataType}
     onValueChange={(v: string) => {
-      meta.pgType = v as PgType;
+      meta.dataType = v as PgType;
     }}
   >
     <Select.Trigger size="sm" class="text-xs h-auto py-0.5 w-full font-normal">
-      {meta.pgType}
+      {meta.dataType}
     </Select.Trigger>
     <Select.Content>
       {#each PG_TYPES as type}

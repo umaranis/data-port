@@ -65,7 +65,7 @@ export class SheetClass {
         if (matchingDbCol) {
           return {
             ...col,
-            pgType: matchingDbCol.dataType,
+            dataType: matchingDbCol.dataType,
             length: matchingDbCol.length,
             precision: matchingDbCol.precision,
             scale: matchingDbCol.scale,
@@ -106,7 +106,7 @@ export class SheetClass {
     this._columns = headers.map((h) => ({
       type: "sheet",
       header: h,
-      pgType: "text",
+      dataType: "text",
       dbColName: convertToDBFriendlyName(h),
       excluded: false,
     }));
@@ -168,7 +168,7 @@ export class SheetClass {
         if (col.type === "sheet") {
           this._columns[index] = {
             ...col,
-            pgType: type.dataType,
+            dataType: type.dataType,
             length: type.length,
             precision: type.precision,
             scale: type.scale,

@@ -49,12 +49,12 @@ export function convertToDBFriendlyName(name: string) {
 }
 
 export function pgTypeStr(meta: {
-  pgType: PgType;
+  dataType: PgType;
   length?: number;
   precision?: number;
   scale?: number;
 }): string {
-  switch (meta.pgType) {
+  switch (meta.dataType) {
     case "varchar":
       return meta.length ? `VARCHAR(${meta.length})` : "VARCHAR";
     case "numeric":
@@ -73,6 +73,6 @@ export function pgTypeStr(meta: {
     case "double precision":
       return "DOUBLE PRECISION";
     default:
-      return meta.pgType.toUpperCase();
+      return meta.dataType.toUpperCase();
   }
 }

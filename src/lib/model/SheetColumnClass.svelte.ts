@@ -1,7 +1,7 @@
 import type { PgType } from "./pgTypes";
 
 type DbColumn = {
-  pgType: PgType;
+  dataType: PgType;
   dbColName?: string;
   length?: number;
   precision?: number;

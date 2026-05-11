@@ -55,7 +55,7 @@ export class SheetDataClass extends AsyncResource {
         path: this.sheet.workbook.filePath,
         sheet: this.sheet.name,
         tableName: this.sheet.tableName,
-        columnTypes: this.sheet.columns.map((m) => m.pgType),
+        columnTypes: this.sheet.columns.map((m) => m.dataType),
         columnNames: this.sheet.columns.map((m) => m.dbColName),
         headerRow: this.sheet.headerRow,
         skipRows: this.sheet.skipRows,
