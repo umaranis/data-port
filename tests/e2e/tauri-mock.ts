@@ -15,6 +15,10 @@ export type MockConfig = {
   insertedRows?: number;
   /** Row indices returned by get_blank_rows. */
   blankRows?: number[];
+  /** Project names returned by list_projects. */
+  savedProjects?: string[];
+  /** Project object returned by load_project. */
+  savedProject?: object;
 };
 
 export async function mockTauriIpc(page: Page, config: MockConfig = {}) {
@@ -67,6 +71,17 @@ export async function mockTauriIpc(page: Page, config: MockConfig = {}) {
               );
             }
             return Promise.resolve(null);
+
+          case "list_projects":
+            return Promise.resolve(cfg.savedProjects ?? []);
+
+          case "save_project":
+            return Promise.resolve(null);
+
+          case "load_project":
+            return cfg.savedProject
+              ? Promise.resolve(cfg.savedProject)
+              : Promise.reject("not found");
 
           default:
             return Promise.reject(`Unhandled Tauri command: ${cmd}`);
