@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { ColumnMeta } from "./pgTypes";
+import type { DbColumn } from "./pgTypes";
 import { AsyncResource } from "./AsyncResource.svelte";
 
 export class DatabaseClass extends AsyncResource {
@@ -30,14 +30,14 @@ export class DatabaseClass extends AsyncResource {
     return this._tables;
   }
 
-  private _dbColumns: Map<string, ColumnMeta[]> = $state(new Map());
+  private _dbColumns: Map<string, DbColumn[]> = $state(new Map());
   public async loadDbColumns(
     tableName: string,
-  ): Promise<ReadonlyArray<ColumnMeta>> {
+  ): Promise<ReadonlyArray<DbColumn>> {
     let table = this._dbColumns.get(tableName);
     if (!table) {
       try {
-        table = await invoke<ColumnMeta[]>("pg_get_columns", {
+        table = await invoke<DbColumn[]>("pg_get_columns", {
           connString: this.connectionString!,
           tableName,
         });

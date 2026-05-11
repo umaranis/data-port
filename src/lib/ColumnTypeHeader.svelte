@@ -1,16 +1,13 @@
 <script lang="ts">
   import * as Select from "$lib/components/ui/select";
-  import { PG_TYPES, TYPE_MODIFIERS, type PgType } from "$lib/model/pgTypes";
+  import {
+    PG_TYPES,
+    TYPE_MODIFIERS,
+    type PgType,
+    type DbColumn,
+  } from "$lib/model/pgTypes";
 
-  type DbMeta = {
-    dataType: PgType;
-    dbColName?: string;
-    length?: number;
-    precision?: number;
-    scale?: number;
-  };
-
-  type Props = { meta: DbMeta };
+  type Props = { meta: DbColumn };
   let { meta }: Props = $props();
 
   let modifiers = $derived(TYPE_MODIFIERS[meta.dataType] ?? {});

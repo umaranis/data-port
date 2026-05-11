@@ -1,12 +1,4 @@
-import type { PgType } from "./pgTypes";
-
-type DbColumn = {
-  dataType: PgType;
-  dbColName?: string;
-  length?: number;
-  precision?: number;
-  scale?: number;
-};
+import type { DbColumn } from "./pgTypes";
 
 export type SheetColumn =
   | ({

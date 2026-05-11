@@ -33,7 +33,7 @@ export const TYPE_MODIFIERS: Record<
   uuid: {},
 };
 
-export type ColumnMeta = {
+export type DbColumn = {
   dataType: PgType;
   dbColName?: string;
   length?: number;

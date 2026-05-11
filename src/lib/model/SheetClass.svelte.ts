@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { WorkbookClass } from "./WorkbookClass.svelte";
-import { convertToDBFriendlyName, type ColumnMeta } from "$lib/model/pgTypes";
+import { convertToDBFriendlyName, type DbColumn } from "$lib/model/pgTypes";
 import { type SheetColumn } from "./SheetColumnClass.svelte";
 import { SheetDataClass } from "./SheetDataClass.svelte";
 import type { DatabaseClass } from "./DatabaseClass.svelte";
@@ -61,7 +61,9 @@ export class SheetClass {
       this.dbColumns = dbCols;
       this._columns = this._columns.map((col) => {
         if (!col.dbColName) return col;
-        const matchingDbCol = dbCols.find((dbCol) => dbCol.dbColName === col.dbColName);
+        const matchingDbCol = dbCols.find(
+          (dbCol) => dbCol.dbColName === col.dbColName,
+        );
         if (matchingDbCol) {
           return {
             ...col,
@@ -114,7 +116,7 @@ export class SheetClass {
 
   // null if sheet action is 'create', may or may not be null if 'append'
   // if not null, then sheet column name must match with dbColumns or column name is undefined
-  private dbColumns: ReadonlyArray<Readonly<ColumnMeta>> | null = null;
+  private dbColumns: ReadonlyArray<Readonly<DbColumn>> | null = null;
 
   public async applySnapshot(s: ProjectSheet) {
     this._action = s.action;
@@ -155,7 +157,7 @@ export class SheetClass {
   }
 
   public async inferColumnTypes() {
-    const types = await invoke<ColumnMeta[]>("infer_column_types", {
+    const types = await invoke<DbColumn[]>("infer_column_types", {
       path: this.workbook.filePath,
       sheet: this.name,
       headerRow: this.headerRow,
