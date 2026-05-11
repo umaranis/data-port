@@ -15,7 +15,7 @@
   <Table.Root>
     <Table.Header>
       <Table.Row>
-        {#each data.sheet.columns as col, i}
+        {#each data.sheet.columns as col}
           <Table.Head class="border align-top bg-gray-100 dark:bg-gray-900">
             <ColumnTypeHeader meta={col} />
           </Table.Head>

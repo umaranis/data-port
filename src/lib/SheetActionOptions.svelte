@@ -1,9 +1,7 @@
 <script lang="ts">
-  import { invoke } from "@tauri-apps/api/core";
   import { SheetClass } from "$lib/model/SheetClass.svelte";
   import { type InsertStatus } from "$lib/model/SheetDataClass.svelte";
   import GenerateSqlDialog from "$lib/GenerateSqlDialog.svelte";
-  import type { ColumnMeta } from "./model/pgTypes";
   import { Button } from "$lib/components/ui/button";
   import { getDatabaseContext } from "./model/databaseContext";
 

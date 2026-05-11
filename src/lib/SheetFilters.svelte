@@ -1,10 +1,8 @@
 <script lang="ts">
-  import { invoke } from "@tauri-apps/api/core";
   import { parseSkipInput, serializeSkipInput } from "$lib/SkipRows";
   import ConfirmClearSkipRows from "$lib/ConfirmClearSkipRows.svelte";
   import { Button } from "$lib/components/ui/button";
   import type { SheetClass } from "./model/SheetClass.svelte";
-  import Inspect from "svelte-inspect-value";
 
   type Props = {
     sheet: SheetClass;

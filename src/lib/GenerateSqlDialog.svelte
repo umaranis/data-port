@@ -2,6 +2,7 @@
   import { invoke } from "@tauri-apps/api/core";
   import { Button } from "$lib/components/ui/button";
   import { pgTypeStr } from "$lib/model/pgTypes";
+  import { pgTypeStr } from "$lib/model/pgTypes";
   import type { SheetClass } from "./model/SheetClass.svelte";
 
   type Props = {

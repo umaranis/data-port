@@ -2,7 +2,6 @@ import { invoke } from "@tauri-apps/api/core";
 import { AsyncResource } from "./AsyncResource.svelte";
 import type { SheetClass } from "./SheetClass.svelte";
 import type { DatabaseClass } from "./DatabaseClass.svelte";
-import { parseSkipInput, serializeSkipInput } from "$lib/SkipRows";
 
 const PAGE_SIZE = 10;
 export type InsertStatus =
