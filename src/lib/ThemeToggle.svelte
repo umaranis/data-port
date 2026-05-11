@@ -8,10 +8,13 @@
   ] as const;
 </script>
 
-<div class="flex items-center gap-1 rounded-md border border-border bg-muted p-0.5 text-xs">
+<div
+  class="flex items-center gap-1 rounded-md border border-border bg-muted p-0.5 text-xs"
+>
   {#each options as opt}
     <button
-      class="rounded px-2 py-1 transition-colors {themeStore.current === opt.value
+      class="rounded px-2 py-1 transition-colors {themeStore.current ===
+      opt.value
         ? 'bg-background text-foreground shadow-sm'
         : 'text-muted-foreground hover:text-foreground'}"
       onclick={() => themeStore.set(opt.value)}

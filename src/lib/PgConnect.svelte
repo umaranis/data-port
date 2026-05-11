@@ -19,7 +19,9 @@
       ? `${encodeURIComponent(username)}:${encodeURIComponent(password)}@`
       : "";
     let base = `postgresql://${userInfo}${host}:${port}/${database}`;
-    return schema ? `${base}?options=-c%20search_path%3D${encodeURIComponent(schema)}` : base;
+    return schema
+      ? `${base}?options=-c%20search_path%3D${encodeURIComponent(schema)}`
+      : base;
   });
 
   type Status = { ok: true } | { ok: false; error: string } | null;
