@@ -34,7 +34,7 @@ export const TYPE_MODIFIERS: Record<
 };
 
 export type ColumnMeta = {
-  type: PgType;
+  dataType: PgType;
   dbColName?: string;
   length?: number;
   precision?: number;

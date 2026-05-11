@@ -65,7 +65,7 @@ export class SheetClass {
         if (matchingDbCol) {
           return {
             ...col,
-            pgType: matchingDbCol.type,
+            pgType: matchingDbCol.dataType,
             length: matchingDbCol.length,
             precision: matchingDbCol.precision,
             scale: matchingDbCol.scale,
@@ -168,7 +168,7 @@ export class SheetClass {
         if (col.type === "sheet") {
           this._columns[index] = {
             ...col,
-            pgType: type.type,
+            pgType: type.dataType,
             length: type.length,
             precision: type.precision,
             scale: type.scale,

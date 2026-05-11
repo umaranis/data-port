@@ -4,7 +4,7 @@ use crate::SheetCache;
 
 #[derive(serde::Serialize, Debug, PartialEq)]
 pub struct ColumnMeta {
-  #[serde(rename = "type")]
+  #[serde(rename = "dataType")]
   pub pg_type: &'static str,
   #[serde(rename = "dbColName")]
   pub name: String,
