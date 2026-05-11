@@ -11,7 +11,7 @@
   import { DatabaseClass } from "$lib/model/DatabaseClass.svelte";
   import { setDatabaseContext } from "$lib/model/databaseContext";
   import { Button } from "$lib/components/ui/button";
-  import type { Project, ProjectSheet } from "$lib/model/projectTypes";
+  import type { Project } from "$lib/model/projectTypes";
 
   let workbook = $state<WorkbookClass | null>(null);
   let database = new DatabaseClass();

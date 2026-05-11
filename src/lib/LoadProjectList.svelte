@@ -48,9 +48,7 @@
     disabled={loading}
     onValueChange={(v) => v && loadProject(v)}
   >
-    <Select.Trigger class="text-sm h-8 w-40">
-      Load project
-    </Select.Trigger>
+    <Select.Trigger class="text-sm h-8 w-40">Load project</Select.Trigger>
     <Select.Content>
       {#each projects as name}
         <Select.Item value={name} class="text-sm">{name}</Select.Item>

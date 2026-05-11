@@ -2,7 +2,6 @@
   import { invoke } from "@tauri-apps/api/core";
   import { Button } from "$lib/components/ui/button";
   import { pgTypeStr } from "$lib/model/pgTypes";
-  import { pgTypeStr } from "$lib/model/pgTypes";
   import type { SheetClass } from "./model/SheetClass.svelte";
 
   type Props = {
@@ -24,7 +23,7 @@
 
   let sql = $derived.by(() => {
     if (!sheet.tableName || sheet.columns.length === 0) return "";
-    const cols = sheet.columns.map((h, i) => {
+    const cols = sheet.columns.map((h) => {
       if (h.name) {
         const name = h.name;
         const type = pgTypeStr(h);

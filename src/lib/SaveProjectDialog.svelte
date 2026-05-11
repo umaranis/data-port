@@ -1,7 +1,6 @@
 <script lang="ts">
   import { invoke } from "@tauri-apps/api/core";
   import * as AlertDialog from "$lib/components/ui/alert-dialog";
-  import { Button } from "$lib/components/ui/button";
   import type { Project } from "$lib/model/projectTypes";
 
   type Props = {
@@ -11,7 +10,12 @@
     onsaved: (name: string) => void;
   };
 
-  let { open = $bindable(), projectName, getProject, onsaved }: Props = $props();
+  let {
+    open = $bindable(),
+    projectName,
+    getProject,
+    onsaved,
+  }: Props = $props();
 
   let nameInput = $state("");
   let error = $state<string | null>(null);
