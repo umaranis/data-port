@@ -202,7 +202,10 @@ async fn get_columns_returns_names_in_definition_order() {
   let cols = pg_get_columns(conn(), table.clone()).await.unwrap();
 
   client.execute(&format!("DROP TABLE public.{table}"), &[]).await.unwrap();
-  assert_eq!(cols, vec!["alpha", "beta", "gamma"]);
+  assert_eq!(cols.iter().map(|c| c.name.as_str()).collect::<Vec<_>>(), vec!["alpha", "beta", "gamma"]);
+  assert_eq!(cols[0].pg_type, "text");
+  assert_eq!(cols[1].pg_type, "integer");
+  assert_eq!(cols[2].pg_type, "boolean");
 }
 
 #[tokio::test]
@@ -214,7 +217,8 @@ async fn get_columns_accepts_unqualified_table_name() {
   let cols = pg_get_columns(conn(), table.clone()).await.unwrap();
 
   client.execute(&format!("DROP TABLE public.{table}"), &[]).await.unwrap();
-  assert_eq!(cols, vec!["x"]);
+  assert_eq!(cols.len(), 1);
+  assert_eq!(cols[0].name, "x");
 }
 
 #[tokio::test]
@@ -226,7 +230,8 @@ async fn get_columns_accepts_schema_qualified_table_name() {
   let cols = pg_get_columns(conn(), format!("public.{table}")).await.unwrap();
 
   client.execute(&format!("DROP TABLE public.{table}"), &[]).await.unwrap();
-  assert_eq!(cols, vec!["x"]);
+  assert_eq!(cols.len(), 1);
+  assert_eq!(cols[0].name, "x");
 }
 
 #[tokio::test]

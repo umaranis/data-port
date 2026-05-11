@@ -35,8 +35,8 @@ export class DatabaseClass extends AsyncResource {
     let table = this._dbColumns.get(tableName);
     if (!table) {
       try {
-        table = await invoke<ColumnMeta[]>("get_database_columns", {
-          connectionString: this.connectionString!,
+        table = await invoke<ColumnMeta[]>("pg_get_columns", {
+          connString: this.connectionString!,
           tableName,
         });
       } catch (e) {

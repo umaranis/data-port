@@ -1,4 +1,4 @@
-use crate::{cell_to_string, SheetCache};
+use crate::{cell_to_string, infer::ColumnMeta, SheetCache};
 use tokio_postgres::NoTls;
 
 pub fn full_error(e: &dyn std::error::Error) -> String {
@@ -200,7 +200,7 @@ pub async fn pg_execute(conn_string: String, sql: String) -> Result<(), String> 
 }
 
 #[tauri::command]
-pub async fn pg_get_columns(conn_string: String, table_name: String) -> Result<Vec<String>, String> {
+pub async fn pg_get_columns(conn_string: String, table_name: String) -> Result<Vec<ColumnMeta>, String> {
   let (schema, table) = if let Some(dot) = table_name.find('.') {
     (
       table_name[..dot].to_string(),
@@ -217,14 +217,42 @@ pub async fn pg_get_columns(conn_string: String, table_name: String) -> Result<V
   });
   let rows = client
     .query(
-      "SELECT column_name FROM information_schema.columns \
-             WHERE table_schema = $1 AND table_name = $2 \
-             ORDER BY ordinal_position",
+      "SELECT column_name, data_type, character_maximum_length, numeric_precision, numeric_scale \
+       FROM information_schema.columns \
+       WHERE table_schema = $1 AND table_name = $2 \
+       ORDER BY ordinal_position",
       &[&schema, &table],
     )
     .await
     .map_err(|e| full_error(&e))?;
-  Ok(rows.iter().map(|r| r.get::<_, String>(0)).collect())
+  Ok(rows.iter().map(|r| {
+    let name: String = r.get(0);
+    let data_type: String = r.get(1);
+    let char_max_len: Option<i32> = r.get(2);
+    let numeric_precision: Option<i32> = r.get(3);
+    let numeric_scale: Option<i32> = r.get(4);
+    let pg_type: &'static str = match data_type.as_str() {
+      "character varying" => "varchar",
+      "boolean" => "boolean",
+      "date" => "date",
+      "integer" => "integer",
+      "bigint" => "bigint",
+      "double precision" => "double precision",
+      "uuid" => "uuid",
+      "timestamp with time zone" => "timestamptz",
+      "timestamp without time zone" => "timestamp",
+      "jsonb" => "jsonb",
+      "numeric" => "numeric",
+      _ => "text",
+    };
+    ColumnMeta {
+      pg_type,
+      name,
+      length: char_max_len.map(|v| v as u32),
+      precision: numeric_precision.map(|v| v as u32),
+      scale: numeric_scale.map(|v| v as u32),
+    }
+  }).collect())
 }
 
 #[cfg(test)]

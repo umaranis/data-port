@@ -1,11 +1,11 @@
 <script lang="ts">
-  import { invoke } from "@tauri-apps/api/core";
   import * as Tabs from "$lib/components/ui/tabs";
   import * as Select from "$lib/components/ui/select";
   import Sheet from "$lib/Sheet.svelte";
   import { WorkbookClass } from "./model/WorkbookClass.svelte.js";
 
-  import { SheetClass, type SheetAction } from "./model/SheetClass.svelte.js";
+  import { type SheetAction } from "./model/SheetClass.svelte.js";
+  import { getDatabaseContext } from "./model/databaseContext.js";
 
   const SHEET_ACTIONS: { value: SheetAction; label: string }[] = [
     { value: "create", label: "create table" },
@@ -22,6 +22,7 @@
 
   let error = $state<string | null>(null);
   let view = $state<"data" | "mapping">("data");
+  const db = getDatabaseContext();
 </script>
 
 {#if error}
@@ -46,7 +47,13 @@
             <div class="flex items-center">
               <Tabs.Trigger value={sheet.name} class="py-2 px-4">
                 {sheet.name}
-                <Select.Root type="single" bind:value={sheet.action}>
+                <Select.Root
+                  type="single"
+                  value={sheet.action}
+                  onValueChange={async (value) => {
+                    sheet.setAction({ action: value as SheetAction, db });
+                  }}
+                >
                   <Select.Trigger
                     size="sm"
                     class="ml-1 text-xs h-auto py-0.5 font-normal"

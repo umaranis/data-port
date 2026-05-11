@@ -16,15 +16,6 @@
   let sqlDialog = $state<GenerateSqlDialog | null>(null);
   let database = getDatabaseContext();
 
-  $effect(() => {
-    if (sheet.action === "append") {
-      const match = database.tables.find(
-        (t) => t === sheet.tableName || t.split(".").pop() === sheet.tableName,
-      );
-      sheet.tableName = match ?? "";
-    }
-  });
-
   let insertStatus = $state<InsertStatus | null>(null);
   let inserting = $state(false);
 

@@ -3,6 +3,7 @@ import type { WorkbookClass } from "./WorkbookClass.svelte";
 import { convertToDBFriendlyName, type ColumnMeta } from "$lib/model/pgTypes";
 import { type SheetColumn } from "./SheetColumnClass.svelte";
 import { SheetDataClass } from "./SheetDataClass.svelte";
+import type { DatabaseClass } from "./DatabaseClass.svelte";
 
 export type SheetAction = "create" | "append" | "recreate" | "skip";
 
@@ -12,7 +13,7 @@ export class SheetClass {
   public get workbook(): WorkbookClass {
     return this._workbook;
   }
-  public tableName: string;
+  public tableName: string | null;
 
   private _data = new SheetDataClass(this);
   public get data(): SheetDataClass {
@@ -22,7 +23,7 @@ export class SheetClass {
   constructor(name: string, workbook: WorkbookClass) {
     this.name = name;
     this._workbook = workbook;
-    this.tableName = $state(name.toLocaleLowerCase().replaceAll(" ", "_"));
+    this.tableName = $state(convertToDBFriendlyName(name));
   }
 
   private _loaded: boolean = $state(false);
@@ -30,7 +31,50 @@ export class SheetClass {
     return this._loaded;
   }
 
-  public action: SheetAction = $state("create");
+  private _action: SheetAction = $state("create");
+  public get action(): SheetAction {
+    return this._action;
+  }
+  public async setAction(
+    value:
+      | { action: "create" | "recreate" | "skip" }
+      | { action: "append"; db: DatabaseClass },
+  ) {
+    this._action = value.action;
+    if (value.action === "append") {
+      await this.setActionAppend(value.db);
+    } else {
+      this.tableName = this.tableName || convertToDBFriendlyName(this.name);
+      this.dbColumns = null;
+    }
+  }
+  private async setActionAppend(db: DatabaseClass) {
+    this._action = "append";
+    const match = db.tables.find(
+      (t) => t === this.tableName || t.split(".").pop() === this.tableName,
+    );
+    this.tableName = match ?? null;
+    if (this.tableName) {
+      const dbCols = await db.loadDbColumns(this.tableName);
+
+      this.dbColumns = dbCols;
+      this.columns.forEach((col, index) => {
+        if (col.dbColumn.name) {
+          const matchingDbCol = dbCols.find((dbCol) => {
+            return dbCol.name == col.dbColumn.name;
+          });
+          if (matchingDbCol) {
+            col.dbColumn.type = matchingDbCol.type;
+            col.dbColumn.length = matchingDbCol.length;
+            col.dbColumn.precision = matchingDbCol.precision;
+            col.dbColumn.scale = matchingDbCol.scale;
+          } else {
+            col.dbColumn.name = undefined;
+          }
+        }
+      });
+    }
+  }
 
   private _headerRow: number = $state(0);
   /**  0 indexed */
