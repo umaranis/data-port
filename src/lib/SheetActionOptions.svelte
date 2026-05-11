@@ -20,7 +20,7 @@
   async function insertRows() {
     if (!sheet.loaded || !sheet.tableName || !database.connectionString) return;
 
-    const anyBlankColumnName = sheet.columns.find((c) => !c.dbColumnName);
+    const anyBlankColumnName = sheet.columns.find((c) => !c.dbColName);
     if (anyBlankColumnName) {
       insertStatus = {
         success: false,
