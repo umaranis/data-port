@@ -14,7 +14,13 @@ export class SheetClass {
   public get workbook(): WorkbookClass {
     return this._workbook;
   }
-  public tableName: string | null;
+  private _tableName: string | null;
+  public get tableName() {
+    return this._tableName;
+  }
+  public set tableName(value) {
+    this._tableName = value;
+  }
 
   private _data = new SheetDataClass(this);
   public get data(): SheetDataClass {
@@ -24,7 +30,7 @@ export class SheetClass {
   constructor(name: string, workbook: WorkbookClass) {
     this.name = name;
     this._workbook = workbook;
-    this.tableName = $state(convertToDBFriendlyName(name));
+    this._tableName = $state(convertToDBFriendlyName(name));
   }
 
   private _loaded: boolean = $state(false);
