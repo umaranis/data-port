@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { SheetClass } from "./SheetClass.svelte";
 import { AsyncResource } from "./AsyncResource.svelte";
 import type { Project, ProjectSheet } from "./projectTypes";
+import type { DatabaseClass } from "./DatabaseClass.svelte";
 
 export class WorkbookClass extends AsyncResource {
   private _filePath: string = $state("");
@@ -22,12 +23,18 @@ export class WorkbookClass extends AsyncResource {
     }
   }
 
-  constructor() {
-    super();
+  private _database: DatabaseClass;
+  public get database() {
+    return this._database;
   }
 
-  static create(filePath: string) {
-    let wb = new WorkbookClass();
+  constructor(db: DatabaseClass) {
+    super();
+    this._database = db;
+  }
+
+  static create(filePath: string, db: DatabaseClass) {
+    let wb = new WorkbookClass(db);
     wb._filePath = filePath;
 
     wb.load(async () => {
@@ -41,8 +48,8 @@ export class WorkbookClass extends AsyncResource {
     return wb;
   }
 
-  static async deserialize(project: Project) {
-    const wb = new WorkbookClass();
+  static async deserialize(project: Project, db: DatabaseClass) {
+    const wb = new WorkbookClass(db);
     wb._filePath = project.filePath;
     let sheetNames = await invoke<string[]>("get_sheets", {
       path: wb.filePath,

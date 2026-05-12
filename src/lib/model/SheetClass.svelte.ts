@@ -3,7 +3,6 @@ import type { WorkbookClass } from "./WorkbookClass.svelte";
 import { convertToDBFriendlyName, type DbColumn } from "$lib/model/pgTypes";
 import { type SheetColumn } from "./SheetColumnClass.svelte";
 import { SheetDataClass } from "./SheetDataClass.svelte";
-import type { DatabaseClass } from "./DatabaseClass.svelte";
 import type { ProjectSheet } from "./projectTypes";
 
 export type SheetAction = "create" | "append" | "recreate" | "skip";
@@ -42,31 +41,27 @@ export class SheetClass {
   public get action(): SheetAction {
     return this._action;
   }
-  public async setAction(
-    value:
-      | { action: "create" | "recreate" | "skip" }
-      | { action: "append"; db: DatabaseClass },
-  ) {
-    this._action = value.action;
-    if (value.action === "append") {
-      await this.setActionAppend(value.db);
+  public async setAction(value: SheetAction) {
+    this._action = value;
+    if (value === "append") {
+      await this.setActionAppend();
     } else {
       this.tableName = this.tableName || convertToDBFriendlyName(this.name);
       this.dbColumns = null;
     }
   }
-  private async setActionAppend(db: DatabaseClass) {
+  private async setActionAppend() {
     this._action = "append";
-    const match = db.tables.find(
+    const match = this.workbook.database.tables.find(
       (t) => t === this.tableName || t.split(".").pop() === this.tableName,
     );
     this.tableName = match ?? null;
-    await this.reMatchColumnsWithDB(db);
+    await this.reMatchColumnsWithDB();
   }
 
-  private async reMatchColumnsWithDB(db: DatabaseClass) {
+  private async reMatchColumnsWithDB() {
     if (this.tableName) {
-      const dbCols = await db.loadDbColumns(this.tableName);
+      const dbCols = await this.workbook.database.loadDbColumns(this.tableName);
 
       this.dbColumns = dbCols;
       this._columns = this._columns.map((col) => {

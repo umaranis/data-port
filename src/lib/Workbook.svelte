@@ -5,7 +5,6 @@
   import { WorkbookClass } from "./model/WorkbookClass.svelte.js";
 
   import { type SheetAction } from "./model/SheetClass.svelte.js";
-  import { getDatabaseContext } from "./model/databaseContext.js";
 
   const SHEET_ACTIONS: { value: SheetAction; label: string }[] = [
     { value: "create", label: "create table" },
@@ -22,7 +21,6 @@
 
   let error = $state<string | null>(null);
   let view = $state<"data" | "mapping">("data");
-  const db = getDatabaseContext();
 </script>
 
 {#if error}
@@ -51,7 +49,7 @@
                   type="single"
                   value={sheet.action}
                   onValueChange={async (value) => {
-                    sheet.setAction({ action: value as SheetAction, db });
+                    sheet.setAction(value as SheetAction);
                   }}
                 >
                   <Select.Trigger

@@ -33,7 +33,7 @@
   async function onFileLoad(fp: string) {
     await invoke("clear_cache");
     if (fp) {
-      workbook = WorkbookClass.create(fp);
+      workbook = WorkbookClass.create(fp, database);
     }
   }
 
@@ -45,7 +45,7 @@
     projectName = project.name;
     await invoke("clear_cache");
     database.connectionString = project.connectionString;
-    workbook = await WorkbookClass.deserialize(project);
+    workbook = await WorkbookClass.deserialize(project, database);
   }
 
   function onProjectSaved(name: string) {
