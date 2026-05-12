@@ -19,6 +19,7 @@ export class SheetClass {
   }
   public set tableName(value) {
     this._tableName = value;
+    this.reMatchColumnsWithDB();
   }
 
   private _data = new SheetDataClass(this);
