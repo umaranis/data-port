@@ -65,12 +65,14 @@ export class SheetClass {
       const dbCols = await this.workbook.database.loadDbColumns(this.tableName);
 
       this.dbColumns = dbCols;
+      const used = new Set<DbColumn>(); // identify already matched columns, don't want to use the same column twice, a sheet can have multiple columns with same header text
       this._columns = this._columns.map((col) => {
         if (!col.dbColName) return col;
         const matchingDbCol = dbCols.find(
-          (dbCol) => dbCol.dbColName === col.dbColName,
+          (dbCol) => dbCol.dbColName === col.dbColName && !used.has(dbCol),
         );
         if (matchingDbCol) {
+          used.add(matchingDbCol);
           return {
             ...col,
             dataType: matchingDbCol.dataType,
