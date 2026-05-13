@@ -2,8 +2,11 @@
   import { invoke } from "@tauri-apps/api/core";
   import { Button } from "$lib/components/ui/button";
 
-  type Props = { onconnect?: (connString: string) => void };
-  let { onconnect }: Props = $props();
+  type Props = {
+    onconnect?: (connString: string) => void;
+    initialConnString?: string | null;
+  };
+  let { onconnect, initialConnString = null }: Props = $props();
 
   let dialog = $state<HTMLDialogElement | null>(null);
 
@@ -13,6 +16,23 @@
   let username = $state("");
   let password = $state("");
   let schema = $state("");
+
+  $effect(() => {
+    if (!initialConnString) return;
+    try {
+      const url = new URL(initialConnString);
+      host = url.hostname || "localhost";
+      port = url.port || "5432";
+      database = url.pathname.slice(1);
+      username = url.username;
+      password = url.password;
+      const options = url.searchParams.get("options") ?? "";
+      const match = options.match(/search_path=([^\s&]+)/);
+      schema = match ? match[1] : "";
+    } catch {
+      // ignore unparseable strings
+    }
+  });
 
   let connString = $derived.by(() => {
     let userInfo = username

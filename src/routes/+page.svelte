@@ -76,7 +76,7 @@
     <ClearCache />
   </div>
   <div class="mt-3 flex flex-row items-center gap-3">
-    <PgConnect onconnect={onConnect} />
+    <PgConnect onconnect={onConnect} initialConnString={database.connectionString} />
     {#if database.connectionString}
       <code
         class="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded px-1.5 py-0.5 break-all"
