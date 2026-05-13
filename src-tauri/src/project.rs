@@ -23,7 +23,7 @@ fn projects_dir(app: &tauri::AppHandle) -> Result<std::path::PathBuf, String> {
   Ok(projects)
 }
 
-/// Removes the password from a connection string. Returns (stripped_url, password).
+/// Removes the password from a PostgreSQL URL. Returns (stripped_url, password).
 fn strip_password(conn_str: &str) -> (String, Option<String>) {
   let Ok(mut url) = Url::parse(conn_str) else {
     return (conn_str.to_string(), None);
@@ -33,13 +33,49 @@ fn strip_password(conn_str: &str) -> (String, Option<String>) {
   (url.to_string(), password)
 }
 
-/// Injects a password into a connection string that has none.
+/// Injects a password into a PostgreSQL URL that has none.
 fn inject_password(conn_str: &str, password: &str) -> String {
   let Ok(mut url) = Url::parse(conn_str) else {
     return conn_str.to_string();
   };
   let _ = url.set_password(Some(password));
   url.to_string()
+}
+
+/// Removes `Pwd=` from an ODBC DSN-less connection string. Returns (stripped, password).
+fn strip_odbc_password(conn_str: &str) -> (String, Option<String>) {
+  let mut password: Option<String> = None;
+  let stripped = conn_str
+    .split(';')
+    .filter_map(|token| {
+      let eq = token.find('=')?;
+      let key = token[..eq].trim().to_lowercase();
+      if key == "pwd" || key == "password" {
+        password = Some(token[eq + 1..].trim().to_string());
+        None
+      } else {
+        Some(token)
+      }
+    })
+    .collect::<Vec<_>>()
+    .join(";");
+  // Preserve trailing semicolon if the original had one.
+  let stripped = if conn_str.trim_end().ends_with(';') && !stripped.ends_with(';') {
+    format!("{stripped};")
+  } else {
+    stripped
+  };
+  (stripped, password.filter(|p| !p.is_empty()))
+}
+
+/// Injects a password into an ODBC DSN-less connection string that has none.
+fn inject_odbc_password(conn_str: &str, password: &str) -> String {
+  // Append Pwd= before the final semicolon (or at the end).
+  if conn_str.trim_end().ends_with(';') {
+    format!("{conn_str}Pwd={password};")
+  } else {
+    format!("{conn_str};Pwd={password};")
+  }
 }
 
 #[tauri::command]
@@ -54,7 +90,12 @@ pub async fn save_project(
 
   let mut payload = payload;
   if let Some(conn_str) = payload.get("connectionString").and_then(|v| v.as_str()) {
-    let (stripped, password) = strip_password(conn_str);
+    let is_db2 = payload.get("dbType").and_then(|v| v.as_str()) == Some("db2");
+    let (stripped, password) = if is_db2 {
+      strip_odbc_password(conn_str)
+    } else {
+      strip_password(conn_str)
+    };
     payload["connectionString"] = serde_json::Value::String(stripped);
     match password {
       Some(pwd) => {
@@ -63,7 +104,6 @@ pub async fn save_project(
           .map_err(|e| e.to_string())?;
       }
       None => {
-        // No password — delete any stale keychain entry for this project name.
         if let Ok(entry) = Entry::new(KEYCHAIN_SERVICE, &name) {
           let _ = entry.delete_credential();
         }
@@ -104,8 +144,13 @@ pub async fn load_project(
   if let Some(conn_str) = project.get("connectionString").and_then(|v| v.as_str()) {
     if let Ok(entry) = Entry::new(KEYCHAIN_SERVICE, &name) {
       if let Ok(password) = entry.get_password() {
-        project["connectionString"] =
-          serde_json::Value::String(inject_password(conn_str, &password));
+        let is_db2 = project.get("dbType").and_then(|v| v.as_str()) == Some("db2");
+        let restored = if is_db2 {
+          inject_odbc_password(conn_str, &password)
+        } else {
+          inject_password(conn_str, &password)
+        };
+        project["connectionString"] = serde_json::Value::String(restored);
       }
     }
   }

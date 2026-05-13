@@ -1,4 +1,5 @@
 mod db;
+mod db2;
 mod infer;
 mod project;
 
@@ -210,7 +211,12 @@ pub fn run() {
       db::pg_get_columns,
       project::save_project,
       project::list_projects,
-      project::load_project
+      project::load_project,
+      db2::db2_connect,
+      db2::db2_get_tables,
+      db2::db2_get_columns,
+      db2::db2_execute,
+      db2::db2_insert_rows
     ])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");

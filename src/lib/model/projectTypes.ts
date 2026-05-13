@@ -1,6 +1,8 @@
 import type { SheetAction } from "./SheetClass.svelte";
 import type { SheetColumn } from "./SheetColumnClass.svelte";
 
+export type DbType = "postgres" | "db2";
+
 export type ProjectSheet = {
   name: string;
   action: SheetAction;
@@ -13,6 +15,7 @@ export type ProjectSheet = {
 export type Project = {
   name: string;
   filePath: string;
+  dbType: DbType | null;
   connectionString: string | null;
   sheets: ProjectSheet[];
 };

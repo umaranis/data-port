@@ -3,6 +3,7 @@
   import FileSelector from "$lib/FileSelector.svelte";
   import ClearCache from "$lib/ClearCache.svelte";
   import PgConnect from "$lib/PgConnect.svelte";
+  import Db2Connect from "$lib/Db2Connect.svelte";
   import Workbook from "$lib/Workbook.svelte";
   import ThemeToggle from "$lib/ThemeToggle.svelte";
   import SaveProjectDialog from "$lib/SaveProjectDialog.svelte";
@@ -25,6 +26,7 @@
     return {
       name: projectName,
       filePath: workbook?.filePath ?? "",
+      dbType: database.dbType,
       connectionString: database.connectionString,
       sheets: workbook?.toSnapshot() ?? [],
     };
@@ -41,9 +43,16 @@
     database.connectionString = cs;
   }
 
+  function switchDbType(type: typeof database.dbType) {
+    if (database.dbType === type) return;
+    database.dbType = type;
+    database.connectionString = null;
+  }
+
   async function onLoadProject(project: Project) {
     projectName = project.name;
     await invoke("clear_cache");
+    database.dbType = project.dbType ?? "postgres";
     database.connectionString = project.connectionString;
     workbook = await WorkbookClass.deserialize(project, database);
   }
@@ -76,7 +85,37 @@
     <ClearCache />
   </div>
   <div class="mt-3 flex flex-row items-center gap-3">
-    <PgConnect onconnect={onConnect} initialConnString={database.connectionString} />
+    <div class="flex rounded-lg border overflow-hidden text-sm">
+      <button
+        class="px-3 py-1.5 transition-colors {database.dbType === 'postgres'
+          ? 'bg-blue-600 text-white'
+          : 'hover:bg-gray-100 dark:hover:bg-gray-800'}"
+        onclick={() => switchDbType("postgres")}
+      >
+        PostgreSQL
+      </button>
+      <button
+        class="px-3 py-1.5 border-l transition-colors {database.dbType === 'db2'
+          ? 'bg-blue-600 text-white'
+          : 'hover:bg-gray-100 dark:hover:bg-gray-800'}"
+        onclick={() => switchDbType("db2")}
+      >
+        DB2
+      </button>
+    </div>
+
+    {#if database.dbType === "postgres"}
+      <PgConnect
+        onconnect={onConnect}
+        initialConnString={database.connectionString}
+      />
+    {:else}
+      <Db2Connect
+        onconnect={onConnect}
+        initialConnString={database.connectionString}
+      />
+    {/if}
+
     {#if database.connectionString}
       <code
         class="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded px-1.5 py-0.5 break-all"

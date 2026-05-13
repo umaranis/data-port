@@ -2,17 +2,21 @@
   import { invoke } from "@tauri-apps/api/core";
   import { Button } from "$lib/components/ui/button";
   import { pgTypeStr } from "$lib/model/pgTypes";
+  import { db2TypeStr } from "$lib/model/db2Types";
+  import type { DbType } from "$lib/model/projectTypes";
   import type { SheetClass } from "./model/SheetClass.svelte";
 
   type Props = {
     sheet: SheetClass;
     connectionString?: string | null;
+    dbType?: DbType;
     dropTable?: boolean;
   };
 
   let {
     sheet,
     connectionString: savedConnString,
+    dbType = "postgres",
     dropTable = false,
   }: Props = $props();
 
@@ -23,10 +27,11 @@
 
   let sql = $derived.by(() => {
     if (!sheet.tableName || sheet.columns.length === 0) return "";
+    const typeStr = dbType === "db2" ? db2TypeStr : pgTypeStr;
     const cols = sheet.columns.map((h) => {
       if (h.dbColName) {
         const name = h.dbColName;
-        const type = pgTypeStr(h);
+        const type = typeStr(h);
         return `  "${name}" ${type}`;
       } else {
         return "";
@@ -37,6 +42,12 @@
       ? `DROP TABLE IF EXISTS "${sheet.tableName}";\n${create}`
       : create;
   });
+
+  let connPlaceholder = $derived(
+    dbType === "db2"
+      ? "Driver={IBM DB2 ODBC DRIVER};Database=MYDB;Hostname=localhost;Port=50000;Protocol=TCPIP;Uid=user;Pwd=pass;"
+      : "postgresql://user:password@localhost:5432/dbname",
+  );
 
   export function open() {
     connString = savedConnString ?? "";
@@ -52,7 +63,8 @@
     executing = true;
     status = null;
     try {
-      await invoke("pg_execute", { connString, sql });
+      const command = dbType === "db2" ? "db2_execute" : "pg_execute";
+      await invoke(command, { connString, sql });
       status = { ok: true };
     } catch (e) {
       status = { ok: false, error: String(e) };
@@ -93,7 +105,7 @@
         id="exec-conn-string"
         type="text"
         bind:value={connString}
-        placeholder="postgresql://user:password@localhost:5432/dbname"
+        placeholder={connPlaceholder}
         class="border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-600"
       />
     </div>

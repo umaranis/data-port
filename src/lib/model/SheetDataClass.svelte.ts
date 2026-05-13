@@ -50,7 +50,9 @@ export class SheetDataClass extends AsyncResource {
 
   public async insertAllRows(database: DatabaseClass): Promise<InsertStatus> {
     try {
-      const count = await invoke<number>("pg_insert_rows", {
+      const command =
+        database.dbType === "db2" ? "db2_insert_rows" : "pg_insert_rows";
+      const count = await invoke<number>(command, {
         connString: database.connectionString,
         path: this.sheet.workbook.filePath,
         sheet: this.sheet.name,

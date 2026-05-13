@@ -1,8 +1,17 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { DbColumn } from "./pgTypes";
+import type { DbType } from "./projectTypes";
 import { AsyncResource } from "./AsyncResource.svelte";
 
 export class DatabaseClass extends AsyncResource {
+  private _dbType: DbType = $state("postgres");
+  get dbType(): DbType {
+    return this._dbType;
+  }
+  set dbType(value: DbType) {
+    this._dbType = value;
+  }
+
   private _connectionString: string | null = $state(null);
   get connectionString(): string | null {
     return this._connectionString;
@@ -12,7 +21,9 @@ export class DatabaseClass extends AsyncResource {
 
     if (value) {
       this.load(async () => {
-        return invoke<string[]>("pg_get_tables", {
+        const command =
+          this._dbType === "db2" ? "db2_get_tables" : "pg_get_tables";
+        return invoke<string[]>(command, {
           connString: this.connectionString,
         }).then((tables) => {
           this._tables = tables;
@@ -37,7 +48,9 @@ export class DatabaseClass extends AsyncResource {
     let table = this._dbColumns.get(tableName);
     if (!table) {
       try {
-        table = await invoke<DbColumn[]>("pg_get_columns", {
+        const command =
+          this._dbType === "db2" ? "db2_get_columns" : "pg_get_columns";
+        table = await invoke<DbColumn[]>(command, {
           connString: this.connectionString!,
           tableName,
         });

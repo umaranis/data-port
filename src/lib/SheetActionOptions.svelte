@@ -85,6 +85,7 @@
     bind:this={sqlDialog}
     {sheet}
     connectionString={database.connectionString}
+    dbType={database.dbType}
     dropTable={sheet.action === "recreate"}
   />
 {:else if sheet.action === "append"}
