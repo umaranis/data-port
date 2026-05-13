@@ -4,7 +4,9 @@ Data Port connects to DB2 via ODBC. This requires two things installed on your m
 - **unixODBC** — the ODBC driver manager
 - **IBM DB2 ODBC/CLI Driver** — the actual DB2 driver library
 
-DBeaver uses IBM's JDBC driver internally and works without any of this. ODBC is a separate stack.
+> [!note]
+DBeaver and DataGrip use IBM's JDBC driver (Java based) internally which is a separate stack from ODBC.
+::
 
 ---
 
@@ -27,7 +29,9 @@ brew install unixodbc
 
 ## 2. Download the IBM DB2 CLI Driver
 
-The driver is available via the [`rust-ibm_db`](https://github.com/ibmdb/rust-ibm_db) project, which includes a setup tool that downloads the official IBM clidriver automatically.
+**Option 1**: download the free "IBM Data Server Driver for ODBC and CLI" from IBM (search "IBM Data Server Driver Package" on ibm.com — it's a free download, no license required).
+
+**Option 2:** The driver is available via the [`rust-ibm_db`](https://github.com/ibmdb/rust-ibm_db) project, which includes a setup tool that downloads drivers hosted on GitHub.
 
 ```bash
 git clone https://github.com/ibmdb/rust-ibm_db.git
@@ -35,12 +39,7 @@ cd rust-ibm_db
 cargo run --bin setup
 ```
 
-This downloads and extracts the clidriver into `./clidriver/`. Note the full path to the `lib` directory:
-
-```bash
-readlink -f ./clidriver/lib
-# e.g. /home/umar/projects/rust-ibm_db/clidriver/lib
-```
+This downloads and extracts the clidriver into `./clidriver/lib`. 
 
 ---
 
@@ -49,10 +48,12 @@ readlink -f ./clidriver/lib
 Check that all shared library dependencies of the driver are satisfied:
 
 ```bash
-ldd /home/umar/projects/rust-ibm_db/clidriver/lib/libdb2.so
+ldd libdb2.so
 ```
 
-Look for any line that says `not found`. On Fedora, `libcrypt.so.1` may be missing:
+Look for any line that says `not found`. 
+
+On Fedora, `libcrypt.so.1` may be missing:
 
 ```
 libcrypt.so.1 => not found
@@ -76,7 +77,7 @@ Create a driver definition file:
 cat > /tmp/db2driver.ini << 'EOF'
 [IBM DB2 ODBC DRIVER]
 Description = IBM DB2 ODBC Driver
-Driver      = /home/umar/projects/rust-ibm_db/clidriver/lib/libdb2.so
+Driver      = /<your_path>/libdb2.so
 FileUsage   = 1
 EOF
 ```
