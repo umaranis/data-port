@@ -8,7 +8,7 @@ export type SheetColumn =
     } & DbColumn)
   | ({
       type: "duplicate";
-      readonly header: string;
+      sourceColIndex: number;
     } & DbColumn)
   | ({
       type: "static";

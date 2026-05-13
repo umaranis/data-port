@@ -66,22 +66,36 @@ export class SheetClass {
 
       this.dbColumns = dbCols;
       const used = new Set<DbColumn>(); // identify already matched columns, don't want to use the same column twice, a sheet can have multiple columns with same header text
-      this._columns = this._columns.map((col) => {
-        if (!col.dbColName) return col;
+      this._columns = this._columns.map((sheetCol) => {
+        if (!sheetCol.dbColName) {
+          switch (sheetCol.type) {
+            case "sheet":
+              sheetCol.dbColName = convertToDBFriendlyName(sheetCol.header);
+              break;
+
+            case "duplicate":
+              // eslint-disable-next-line no-case-declarations
+              const sourceCol = this._columns[sheetCol.sourceColIndex];
+              if ("header" in sourceCol) {
+                sheetCol.dbColName = convertToDBFriendlyName(sourceCol.header);
+              }
+              break;
+          }
+        }
         const matchingDbCol = dbCols.find(
-          (dbCol) => dbCol.dbColName === col.dbColName && !used.has(dbCol),
+          (dbCol) => dbCol.dbColName === sheetCol.dbColName && !used.has(dbCol),
         );
         if (matchingDbCol) {
           used.add(matchingDbCol);
           return {
-            ...col,
+            ...sheetCol,
             dataType: matchingDbCol.dataType,
             length: matchingDbCol.length,
             precision: matchingDbCol.precision,
             scale: matchingDbCol.scale,
           };
         }
-        return { ...col, dbColName: undefined };
+        return { ...sheetCol, dbColName: undefined };
       });
     }
   }
@@ -107,7 +121,7 @@ export class SheetClass {
     this.data.loadPage(0);
   }
 
-  private _columns: Readonly<SheetColumn>[] = $state([]);
+  private _columns: SheetColumn[] = $state([]);
   // columns from the sheet appear first
   public get columns(): ReadonlyArray<Readonly<SheetColumn>> {
     return this._columns;
