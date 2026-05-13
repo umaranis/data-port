@@ -3,6 +3,10 @@ use keyring::Entry;
 use tauri::Manager;
 use url::Url;
 
+#[cfg(test)]
+#[path = "project_tests.rs"]
+mod tests;
+
 const KEYCHAIN_SERVICE: &str = "data-port";
 
 fn sanitize_name(name: &str) -> String {
