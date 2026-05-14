@@ -17,7 +17,7 @@
       <Table.Row>
         {#each data.sheet.columns as col}
           <Table.Head class="border align-top bg-gray-100 dark:bg-gray-900">
-            <ColumnTypeHeader meta={col} />
+            <ColumnTypeHeader meta={col} sheet={data.sheet} />
           </Table.Head>
         {/each}
       </Table.Row>

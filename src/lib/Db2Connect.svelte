@@ -96,7 +96,8 @@
     <div class="flex flex-col gap-1">
       <label
         for="db2-driver"
-        class="text-sm font-medium text-gray-700 dark:text-gray-300">Driver</label
+        class="text-sm font-medium text-gray-700 dark:text-gray-300"
+        >Driver</label
       >
       <input
         id="db2-driver"
@@ -110,7 +111,8 @@
       <div class="flex flex-col gap-1 flex-1">
         <label
           for="db2-host"
-          class="text-sm font-medium text-gray-700 dark:text-gray-300">Host</label
+          class="text-sm font-medium text-gray-700 dark:text-gray-300"
+          >Host</label
         >
         <input
           id="db2-host"
@@ -122,7 +124,8 @@
       <div class="flex flex-col gap-1 w-24">
         <label
           for="db2-port"
-          class="text-sm font-medium text-gray-700 dark:text-gray-300">Port</label
+          class="text-sm font-medium text-gray-700 dark:text-gray-300"
+          >Port</label
         >
         <input
           id="db2-port"

@@ -6,19 +6,32 @@
     type PgType,
     type DbColumn,
   } from "$lib/model/pgTypes";
+  import type { SheetClass } from "$lib/model/SheetClass.svelte";
 
-  type Props = { meta: DbColumn };
-  let { meta }: Props = $props();
+  type Props = { meta: DbColumn; sheet: SheetClass };
+  let { meta, sheet }: Props = $props();
 
   let modifiers = $derived(TYPE_MODIFIERS[meta.dataType] ?? {});
 </script>
 
 <div class="flex flex-col gap-1 py-1 min-w-27.5">
-  <input
-    type="text"
-    bind:value={meta.dbColName}
-    class="text-xs font-normal border rounded px-1 py-0.5 w-full dark:bg-gray-800 dark:border-gray-600"
-  />
+  {#if sheet.action === "append" && !!sheet.tableName && !!sheet.dbColumns}
+    <select
+      bind:value={meta.dbColName}
+      class="text-xs font-normal border rounded px-1 py-0.5 w-full dark:bg-gray-800 dark:border-gray-600"
+    >
+      <option value={undefined}>— none —</option>
+      {#each sheet.dbColumns as col}
+        <option value={col.dbColName}>{col.dbColName}</option>
+      {/each}
+    </select>
+  {:else}
+    <input
+      type="text"
+      bind:value={meta.dbColName}
+      class="text-xs font-normal border rounded px-1 py-0.5 w-full dark:bg-gray-800 dark:border-gray-600"
+    />
+  {/if}
   <Select.Root
     type="single"
     value={meta.dataType}

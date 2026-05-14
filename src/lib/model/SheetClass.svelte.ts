@@ -138,7 +138,14 @@ export class SheetClass {
 
   // null if sheet action is 'create', may or may not be null if 'append'
   // if not null, then sheet column name must match with dbColumns or column name is undefined
-  private dbColumns: ReadonlyArray<Readonly<DbColumn>> | null = null;
+  private _dbColumns: ReadonlyArray<Readonly<DbColumn>> | null =
+    $state.raw(null);
+  public get dbColumns(): ReadonlyArray<Readonly<DbColumn>> | null {
+    return this._dbColumns;
+  }
+  private set dbColumns(value: ReadonlyArray<Readonly<DbColumn>> | null) {
+    this._dbColumns = value;
+  }
 
   public async applySnapshot(s: ProjectSheet) {
     this._action = s.action;

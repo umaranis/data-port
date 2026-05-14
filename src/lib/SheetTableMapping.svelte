@@ -39,7 +39,7 @@
                 >{column.header}</Table.Cell
               >
               <Table.Cell class="border">
-                <ColumnTypeHeader meta={column} />
+                <ColumnTypeHeader meta={column} {sheet} />
               </Table.Cell>
             </Table.Row>
           {/if}
