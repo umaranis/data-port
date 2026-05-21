@@ -61,7 +61,7 @@ export class SheetClass {
   }
 
   private async reMatchColumnsWithDB() {
-    if (this.tableName) {
+    if (this.tableName && this.action === "append") {
       const dbCols = await this.workbook.database.loadDbColumns(this.tableName);
 
       this.dbColumns = dbCols;
@@ -123,7 +123,7 @@ export class SheetClass {
 
   private _columns: SheetColumn[] = $state([]);
   // columns from the sheet appear first
-  public get columns(): ReadonlyArray<Readonly<SheetColumn>> {
+  public get columns(): ReadonlyArray<SheetColumn> {
     return this._columns;
   }
   private setColumns(headers: string[]) {
