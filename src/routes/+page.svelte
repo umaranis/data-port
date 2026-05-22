@@ -81,7 +81,7 @@
     </div>
   </div>
   <div class="flex flex-row items-center gap-3">
-    <FileSelector onload={onFileLoad} />
+    <FileSelector filePath={workbook?.filePath ?? null} onload={onFileLoad} />
     <ClearCache />
   </div>
   <div class="mt-3 flex flex-row items-center gap-3">

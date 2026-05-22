@@ -3,12 +3,11 @@
   import { Button } from "$lib/components/ui/button";
 
   type Props = {
+    filePath: string | null;
     onload: (filePath: string) => void;
   };
 
-  let { onload }: Props = $props();
-
-  let filePath = $state<string | null>(null);
+  let { onload, filePath = $bindable() }: Props = $props();
 
   async function selectFile() {
     const selected = await open({
