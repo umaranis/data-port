@@ -79,10 +79,10 @@ test.describe("tableName change re-matching with duplicate column headers", () =
     await page.getByRole("button", { name: "Mapping" }).click();
     await page.locator("#append-table").selectOption("employees_table");
 
-    // The first "name" column wins the match and is preserved.
-    const inputs = page.getByRole("table").locator('input[type="text"]');
-    await expect(inputs.nth(0)).toHaveValue("id");
-    await expect(inputs.nth(1)).toHaveValue("name");
+    // The first "name" column wins the match; table shows 2 DB-column rows.
+    const rows = page.getByRole("table").locator("tbody tr");
+    await expect(rows.nth(0).locator("td").nth(1)).toContainText("id");
+    await expect(rows.nth(1).locator("td").nth(1)).toContainText("name");
   });
 
   test("second duplicate column is cleared because the DB entry is already consumed", async ({
@@ -91,10 +91,8 @@ test.describe("tableName change re-matching with duplicate column headers", () =
     await page.getByRole("button", { name: "Mapping" }).click();
     await page.locator("#append-table").selectOption("employees_table");
 
-    // The DB "name" entry was already consumed by the first column, so the second
-    // duplicate finds no remaining match and has its dbColName cleared.
-    const inputs = page.getByRole("table").locator('input[type="text"]');
-    await expect(inputs.nth(2)).toHaveValue("");
-    await expect(inputs.nth(3)).toHaveValue("");
+    // The second "name" and "dept" are cleared → only 2 DB-column rows (id, name).
+    const rows = page.getByRole("table").locator("tbody tr");
+    await expect(rows).toHaveCount(2);
   });
 });

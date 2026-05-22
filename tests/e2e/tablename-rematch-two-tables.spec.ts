@@ -81,11 +81,11 @@ test.describe("tableName change re-matching with two tables", () => {
     await page.getByRole("button", { name: "Mapping" }).click();
     await page.locator("#append-table").selectOption("employees_table");
 
-    const inputs = page.getByRole("table").locator('input[type="text"]');
-    await expect(inputs.nth(0)).toHaveValue("id");
-    await expect(inputs.nth(1)).toHaveValue("name");
-    await expect(inputs.nth(2)).toHaveValue("");
-    await expect(inputs.nth(3)).toHaveValue("");
+    // Table shows DB-column rows for the 2 matched columns; email/dept cleared.
+    const rows = page.getByRole("table").locator("tbody tr");
+    await expect(rows).toHaveCount(2);
+    await expect(rows.nth(0).locator("td").nth(1)).toContainText("id");
+    await expect(rows.nth(1).locator("td").nth(1)).toContainText("name");
   });
 
   test("switching to products_table after employees_table clears name (only id survives)", async ({
@@ -95,13 +95,10 @@ test.describe("tableName change re-matching with two tables", () => {
     await page.locator("#append-table").selectOption("employees_table");
     await page.locator("#append-table").selectOption("products_table");
 
-    // id still matches products_table; name has no match → cleared.
-    // email and dept were already cleared and remain cleared.
-    const inputs = page.getByRole("table").locator('input[type="text"]');
-    await expect(inputs.nth(0)).toHaveValue("id");
-    await expect(inputs.nth(1)).toHaveValue("");
-    await expect(inputs.nth(2)).toHaveValue("");
-    await expect(inputs.nth(3)).toHaveValue("");
+    // products_table has only "id"; name/email/dept cleared → 1 DB-column row.
+    const rows = page.getByRole("table").locator("tbody tr");
+    await expect(rows).toHaveCount(1);
+    await expect(rows.nth(0).locator("td").nth(1)).toContainText("id");
   });
 
   test("switching back to employees_table re-matches id and name (cleared columns re-derive from header)", async ({
@@ -113,13 +110,11 @@ test.describe("tableName change re-matching with two tables", () => {
     // Switch back to employees_table.
     await page.locator("#append-table").selectOption("employees_table");
 
-    // reMatchColumnsWithDB re-derives dbColName from the column header when it is
-    // cleared (undefined), so "name" is re-matched against employees_table on the
-    // way back. email and dept are also re-derived but find no match → stay cleared.
-    const inputs = page.getByRole("table").locator('input[type="text"]');
-    await expect(inputs.nth(0)).toHaveValue("id");
-    await expect(inputs.nth(1)).toHaveValue("name");
-    await expect(inputs.nth(2)).toHaveValue("");
-    await expect(inputs.nth(3)).toHaveValue("");
+    // reMatchColumnsWithDB re-derives dbColName from header for cleared columns;
+    // "name" re-matches, email/dept find no match → 2 DB-column rows: id and name.
+    const rows = page.getByRole("table").locator("tbody tr");
+    await expect(rows).toHaveCount(2);
+    await expect(rows.nth(0).locator("td").nth(1)).toContainText("id");
+    await expect(rows.nth(1).locator("td").nth(1)).toContainText("name");
   });
 });

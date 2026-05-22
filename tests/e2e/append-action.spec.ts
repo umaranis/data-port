@@ -71,10 +71,10 @@ test.describe("append action column re-matching", () => {
       .click();
     await page.getByRole("option", { name: "append table" }).click();
 
-    // "email" and "dept" have no matching column in the DB table → cleared.
-    const inputs = page.getByRole("table").locator('input[type="text"]');
-    await expect(inputs.nth(2)).toHaveValue("");
-    await expect(inputs.nth(3)).toHaveValue("");
+    // Table switches to DB-column view; only matched DB columns appear as rows.
+    // "email" and "dept" cleared → not shown; only id and name rows remain.
+    const rows = page.getByRole("table").locator("tbody tr");
+    await expect(rows).toHaveCount(2);
   });
 
   test("dbColNames matching a DB column are preserved when action changes to append", async ({
@@ -89,9 +89,9 @@ test.describe("append action column re-matching", () => {
       .click();
     await page.getByRole("option", { name: "append table" }).click();
 
-    // "id" and "name" exist in the DB table → preserved.
-    const inputs = page.getByRole("table").locator('input[type="text"]');
-    await expect(inputs.nth(0)).toHaveValue("id");
-    await expect(inputs.nth(1)).toHaveValue("name");
+    // "id" and "name" exist in the DB table → shown as DB-column rows.
+    const rows = page.getByRole("table").locator("tbody tr");
+    await expect(rows.nth(0).locator("td").nth(1)).toContainText("id");
+    await expect(rows.nth(1).locator("td").nth(1)).toContainText("name");
   });
 });

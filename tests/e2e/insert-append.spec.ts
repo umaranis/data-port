@@ -20,6 +20,11 @@ async function setup(page: Page) {
     sheetRows: FAKE_ROWS,
     sheetNames: [SHEET_NAME],
     dbTables: [DB_TABLE],
+    dbColumns: [
+      { dbColName: "id", dataType: "text" },
+      { dbColName: "name", dataType: "text" },
+      { dbColName: "department", dataType: "text" },
+    ],
     insertedRows: 2,
   });
   await page.goto("/");
@@ -70,14 +75,12 @@ test.describe("append insert flow", () => {
 
   test("inserts rows and shows success count", async ({ page }) => {
     await switchToAppend(page);
-    await fillColumnNames(page, ["id", "name", "department"]);
     await page.getByRole("button", { name: "Insert rows" }).click();
     await expect(page.getByText("2 rows inserted.")).toBeVisible();
   });
 
   test("pg_insert_rows receives correct columnNames", async ({ page }) => {
     await switchToAppend(page);
-    await fillColumnNames(page, ["id", "name", "department"]);
     await page.getByRole("button", { name: "Insert rows" }).click();
     await expect(page.getByText("2 rows inserted.")).toBeVisible();
 
