@@ -19,6 +19,7 @@ export class SheetClass {
   }
   public set tableName(value) {
     this._tableName = value;
+    this.generateDBColNames();
     this.reMatchColumnsWithDB();
   }
 
@@ -44,6 +45,7 @@ export class SheetClass {
   }
   public async setAction(value: SheetAction) {
     this._action = value;
+    this.generateDBColNames();
     if (value === "append") {
       await this.setActionAppend();
     } else {
@@ -67,21 +69,6 @@ export class SheetClass {
       this.dbColumns = dbCols;
       const used = new Set<DbColumn>(); // identify already matched columns, don't want to use the same column twice, a sheet can have multiple columns with same header text
       this._columns = this._columns.map((sheetCol) => {
-        if (!sheetCol.dbColName) {
-          switch (sheetCol.type) {
-            case "sheet":
-              sheetCol.dbColName = convertToDBFriendlyName(sheetCol.header);
-              break;
-
-            case "duplicate":
-              // eslint-disable-next-line no-case-declarations
-              const sourceCol = this._columns[sheetCol.sourceColIndex];
-              if ("header" in sourceCol) {
-                sheetCol.dbColName = convertToDBFriendlyName(sourceCol.header);
-              }
-              break;
-          }
-        }
         const matchingDbCol = dbCols.find(
           (dbCol) => dbCol.dbColName === sheetCol.dbColName && !used.has(dbCol),
         );
@@ -98,6 +85,26 @@ export class SheetClass {
         return { ...sheetCol, dbColName: undefined };
       });
     }
+  }
+
+  private generateDBColNames() {
+    this._columns.forEach((sheetCol) => {
+      if (!sheetCol.dbColName) {
+        switch (sheetCol.type) {
+          case "sheet":
+            sheetCol.dbColName = convertToDBFriendlyName(sheetCol.header);
+            break;
+
+          case "duplicate":
+            // eslint-disable-next-line no-case-declarations
+            const sourceCol = this._columns[sheetCol.sourceColIndex];
+            if ("header" in sourceCol) {
+              sheetCol.dbColName = convertToDBFriendlyName(sourceCol.header);
+            }
+            break;
+        }
+      }
+    });
   }
 
   private _headerRow: number = $state(0);
