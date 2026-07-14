@@ -19,7 +19,7 @@
   let { workbook }: Props = $props();
 
   let error = $state<string | null>(null);
-  let view = $state<"data" | "mapping">("data");
+  let view = $state<"data" | "mapping" | "preview">("data");
 </script>
 
 {#if error}
@@ -43,7 +43,13 @@
             {/if}
             <div class="flex items-center">
               <Tabs.Trigger value={sheet.name} class="py-2 px-4">
-                {sheet.name}
+                <span
+                  class={sheet.skipped
+                    ? "line-through text-muted-foreground"
+                    : ""}
+                  title={sheet.skipped ? "Skipped — excluded from load" : ""}
+                  >{sheet.name}</span
+                >
                 <Select.Root
                   type="single"
                   value={sheet.selectedMapping.action}
@@ -87,6 +93,13 @@
               ? 'bg-primary text-primary-foreground'
               : 'hover:bg-muted'}"
             onclick={() => (view = "mapping")}>Mapping</button
+          >
+          <div class="w-px bg-border"></div>
+          <button
+            class="px-3 py-1 {view === 'preview'
+              ? 'bg-primary text-primary-foreground'
+              : 'hover:bg-muted'}"
+            onclick={() => (view = "preview")}>Preview</button
           >
         </div>
       </div>

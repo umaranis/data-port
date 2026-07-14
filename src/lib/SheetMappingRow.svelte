@@ -5,6 +5,7 @@
   import type { ColumnMapping } from "./model/mappingTypes";
   import type { SheetClass } from "./model/SheetClass.svelte";
   import type { SheetMappingClass } from "./model/SheetMappingClass.svelte";
+  import SourcePicker from "./SourcePicker.svelte";
 
   type Props = {
     index: number;
@@ -17,24 +18,6 @@
 
   let readOnlyTarget = $derived(mapping.isReadOnlyTarget);
   let modifiers = $derived(TYPE_MODIFIERS[cm.target.dataType] ?? {});
-
-  /** Human label for the current Source (used where the Source is not editable). */
-  let sourceLabel = $derived.by(() => {
-    switch (cm.source.kind) {
-      case "sheet":
-        return sheet.columns[cm.source.sheetColIndex]?.header ?? "—";
-      case "static":
-        return `“${cm.source.value ?? ""}”`;
-      case "expression":
-        return cm.source.expression ?? "expression";
-      case "db-serial":
-        return cm.source.dbSequenceName ?? "db serial";
-      case "custom-sequence":
-        return "custom sequence";
-      case "none":
-        return "— none —";
-    }
-  });
 
   function setSheetSource(v: string) {
     const idx = v === "" ? -1 : Number(v);
@@ -79,7 +62,7 @@
         {/each}
       </select>
     {:else}
-      <span class="text-xs font-medium">{sourceLabel}</span>
+      <SourcePicker {cm} {sheet} />
     {/if}
   </Table.Cell>
 
@@ -155,4 +138,18 @@
       {/if}
     {/if}
   </Table.Cell>
+
+  {#if !readOnlyTarget}
+    <Table.Cell class="border text-center">
+      <button
+        type="button"
+        aria-label="Remove column"
+        title="Remove column"
+        onclick={() => mapping.removeColumn(index - 1)}
+        class="text-muted-foreground hover:text-red-600 px-1"
+      >
+        ✕
+      </button>
+    </Table.Cell>
+  {/if}
 </Table.Row>

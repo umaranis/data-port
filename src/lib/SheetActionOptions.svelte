@@ -2,7 +2,6 @@
   import { SheetClass } from "$lib/model/SheetClass.svelte";
   import { SheetMappingClass } from "$lib/model/SheetMappingClass.svelte";
   import { type InsertStatus } from "$lib/model/SheetDataClass.svelte";
-  import GenerateSqlDialog from "$lib/GenerateSqlDialog.svelte";
   import { Button } from "$lib/components/ui/button";
   import { getDatabaseContext } from "./model/databaseContext";
 
@@ -13,14 +12,18 @@
 
   let { sheet, mapping }: Props = $props();
 
-  let sqlDialog = $state<GenerateSqlDialog | null>(null);
   let database = getDatabaseContext();
 
   let insertStatus = $state<InsertStatus | null>(null);
   let inserting = $state(false);
 
   async function insertRows() {
-    if (!sheet.loaded || !mapping.tableName || !database.connectionString)
+    if (
+      sheet.skipped ||
+      !sheet.loaded ||
+      !mapping.tableName ||
+      !database.connectionString
+    )
       return;
 
     if (!mapping.allColumnNamesSet) {
@@ -57,15 +60,10 @@
       <Button
         variant="outline"
         size="sm"
-        disabled={mapping.columns.length === 0}
-        onclick={() => sqlDialog?.open()}
-      >
-        Generate SQL
-      </Button>
-      <Button
-        variant="outline"
-        size="sm"
-        disabled={!database.connectionString || !mapping.tableName || inserting}
+        disabled={sheet.skipped ||
+          !database.connectionString ||
+          !mapping.tableName ||
+          inserting}
         onclick={() => insertRows()}
       >
         {inserting ? "Inserting…" : "Insert rows"}
@@ -83,13 +81,6 @@
       </p>
     {/if}
   </div>
-  <GenerateSqlDialog
-    bind:this={sqlDialog}
-    {mapping}
-    connectionString={database.connectionString}
-    dbType={database.dbType}
-    dropTable={mapping.action === "recreate"}
-  />
 {:else if mapping.action === "append"}
   <div class="flex flex-col gap-1">
     <div class="flex items-center gap-2">
@@ -114,7 +105,10 @@
       <Button
         variant="outline"
         size="sm"
-        disabled={!database.connectionString || !mapping.tableName || inserting}
+        disabled={sheet.skipped ||
+          !database.connectionString ||
+          !mapping.tableName ||
+          inserting}
         onclick={() => insertRows()}
       >
         {inserting ? "Inserting…" : "Insert rows"}

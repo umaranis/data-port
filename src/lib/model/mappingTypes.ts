@@ -34,3 +34,27 @@ export type ColumnMapping = {
 export function isMaterialized(source: Source): boolean {
   return source.kind === "sheet" || source.kind === "static";
 }
+
+/** Placeholder tokens shown in Preview for Sources that aren't evaluated yet. */
+export const PLACEHOLDER_TOKENS: Record<string, string> = {
+  expression: "«expr»",
+  "db-serial": "«serial»",
+  "custom-sequence": "«seq»",
+};
+
+/** Resolve the value a Source shows in the Preview grid for one sheet data row.
+ * Sheet and static values are inline; deferred Sources render a placeholder. */
+export function resolvePreviewCell(source: Source, row: string[]): string {
+  switch (source.kind) {
+    case "sheet":
+      return row[source.sheetColIndex] ?? "";
+    case "static":
+      return source.value ?? "";
+    case "expression":
+    case "db-serial":
+    case "custom-sequence":
+      return PLACEHOLDER_TOKENS[source.kind];
+    case "none":
+      return "";
+  }
+}

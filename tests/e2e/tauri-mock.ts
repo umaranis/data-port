@@ -61,6 +61,10 @@ export async function mockTauriIpc(page: Page, config: MockConfig = {}) {
           case "pg_insert_rows":
             return Promise.resolve(cfg.insertedRows ?? 0);
 
+          case "pg_execute":
+          case "db2_execute":
+            return Promise.resolve(null);
+
           case "pg_get_columns": {
             const tbl: string = (args as any)?.tableName ?? "";
             if (cfg.dbColumnsByTable) {

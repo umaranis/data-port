@@ -1,8 +1,9 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { DatabaseClass } from "./DatabaseClass.svelte";
 import type { SheetClass } from "./SheetClass.svelte";
-import { convertToDBFriendlyName, type DbColumn } from "./pgTypes";
+import { convertToDBFriendlyName, type DbColumn, type PgType } from "./pgTypes";
 import {
+  isMaterialized,
   type ColumnMapping,
   type MappingAction,
   type Source,
@@ -72,6 +73,25 @@ export class SheetMappingClass {
 
   public get isReadOnlyTarget(): boolean {
     return this._action === "append";
+  }
+
+  /** Append a new Target Column (create/recreate only). It starts unnamed with a
+   * `none` Source so the user can author its name, type, and Source. */
+  public addColumn() {
+    if (this._action === "append") return;
+    this._columns = [
+      ...this._columns,
+      {
+        target: { dbColName: "", dataType: "text" as PgType },
+        source: { kind: "none" } as Source,
+      },
+    ];
+  }
+
+  /** Remove the Target Column at `index` (create/recreate only). */
+  public removeColumn(index: number) {
+    if (this._action === "append") return;
+    this._columns = this._columns.filter((_, i) => i !== index);
   }
 
   /** Seed one Target Column per Sheet Column, each sourced from that column. */
@@ -152,9 +172,13 @@ export class SheetMappingClass {
     });
   }
 
-  /** True when every target has a non-empty column name. */
+  /** True when every target that will actually be written has a non-empty column
+   * name. Unmapped/deferred Sources are omitted from the INSERT, so a blank name
+   * on those doesn't block the load. */
   public get allColumnNamesSet(): boolean {
-    return this._columns.every((cm) => !!cm.target.dbColName);
+    return this._columns.every(
+      (cm) => !isMaterialized(cm.source) || !!cm.target.dbColName,
+    );
   }
 
   public async insertRows(): Promise<InsertStatus> {

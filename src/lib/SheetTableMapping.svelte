@@ -1,5 +1,6 @@
 <script lang="ts">
   import * as Table from "$lib/components/ui/table";
+  import { Button } from "$lib/components/ui/button";
   import type { SheetClass } from "./model/SheetClass.svelte";
   import type { SheetMappingClass } from "./model/SheetMappingClass.svelte";
   import SheetMappingRow from "./SheetMappingRow.svelte";
@@ -38,6 +39,10 @@
           <Table.Head class="border bg-gray-100 dark:bg-gray-900 w-20"
             >Scale</Table.Head
           >
+          {#if !mapping.isReadOnlyTarget}
+            <Table.Head class="border bg-gray-100 dark:bg-gray-900 w-10"
+            ></Table.Head>
+          {/if}
         </Table.Row>
       </Table.Header>
       <Table.Body>
@@ -46,5 +51,13 @@
         {/each}
       </Table.Body>
     </Table.Root>
+  </div>
+{/if}
+
+{#if !mapping.isReadOnlyTarget}
+  <div class="mt-2">
+    <Button variant="outline" size="sm" onclick={() => mapping.addColumn()}>
+      + Add column
+    </Button>
   </div>
 {/if}

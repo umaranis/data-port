@@ -216,6 +216,7 @@ test.describe("Skip blank rows", () => {
   test("merges blank rows with already-entered skip rows", async ({ page }) => {
     await setup(page, { blankRows: [5] });
     await skipRowsInput(page).fill("2");
+    await skipRowsInput(page).press("Tab");
     await findBlankButton(page).click();
     await expect(skipRowsInput(page)).toHaveValue("2,5");
   });
@@ -223,6 +224,7 @@ test.describe("Skip blank rows", () => {
   test("does not change input when no blank rows found", async ({ page }) => {
     await setup(page, { blankRows: [] });
     await skipRowsInput(page).fill("2");
+    await skipRowsInput(page).press("Tab");
     await findBlankButton(page).click();
     await expect(skipRowsInput(page)).toHaveValue("2");
   });

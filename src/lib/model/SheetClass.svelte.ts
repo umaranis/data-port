@@ -37,6 +37,28 @@ export class SheetClass {
     return this._mappings[this._selectedMappingIndex] ?? this._mappings[0];
   }
 
+  /** Add a new create Mapping (one Target Column per Sheet Column, blank target
+   * table name) and select it. */
+  public addMapping() {
+    const m = new SheetMappingClass(this, this.workbook.database);
+    m.tableName = "";
+    m.seedFromSheet();
+    this._mappings = [...this._mappings, m];
+    this._selectedMappingIndex = this._mappings.length - 1;
+  }
+
+  /** Remove the Mapping at `index`. A Sheet always keeps at least one Mapping.
+   * The selection follows the same Mapping the user was viewing where possible. */
+  public removeMapping(index: number) {
+    if (this._mappings.length <= 1) return;
+    this._mappings = this._mappings.filter((_, i) => i !== index);
+    if (index < this._selectedMappingIndex) {
+      this._selectedMappingIndex--;
+    } else if (this._selectedMappingIndex >= this._mappings.length) {
+      this._selectedMappingIndex = this._mappings.length - 1;
+    }
+  }
+
   /** A skipped Sheet is excluded from loading entirely; its Mappings are ignored. */
   private _skipped: boolean = $state(false);
   public get skipped(): boolean {
