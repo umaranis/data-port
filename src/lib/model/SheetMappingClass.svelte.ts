@@ -1,4 +1,3 @@
-import { invoke } from "@tauri-apps/api/core";
 import type { DatabaseClass } from "./DatabaseClass.svelte";
 import type { SheetClass } from "./SheetClass.svelte";
 import { convertToDBFriendlyName, type DbColumn, type PgType } from "./pgTypes";
@@ -183,15 +182,12 @@ export class SheetMappingClass {
 
   public async insertRows(): Promise<InsertStatus> {
     try {
-      const command =
-        this.database.dbType === "db2" ? "db2_insert_rows" : "pg_insert_rows";
       const targets = this._columns.map((cm) => ({
         dbColName: cm.target.dbColName ?? "",
         dataType: cm.target.dataType,
         source: cm.source,
       }));
-      const count = await invoke<number>(command, {
-        connString: this.database.connectionString,
+      const count = await this.database.insertRows({
         path: this.sheet.workbook.filePath,
         sheet: this.sheet.name,
         tableName: this._tableName,
