@@ -48,3 +48,17 @@ State is modeled as **reactive classes in `.svelte.ts` files** using Svelte 5 ru
 - Two-space indent in `.svelte`/`.ts` (see existing files); tabs appear only in some config files.
 - Reactive model logic goes in `.svelte.ts` classes with private `$state` fields and public getters/setters, not in components.
 - `src-tauri/**` is excluded from ESLint; lint/format apply to `src` only.
+
+## Agent skills
+
+### Issue tracker
+
+Issues and PRDs live as GitHub issues, managed via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five canonical triage roles, label strings unchanged. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
