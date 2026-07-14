@@ -11,16 +11,18 @@
   };
 
   let { sheet, view = "data" }: Props = $props();
+
+  let mapping = $derived(sheet.selectedMapping);
 </script>
 
 {#if sheet.columns.length > 0}
   <div class="m-2 flex items-center justify-between gap-4">
-    <SheetActionOptions {sheet} />
+    <SheetActionOptions {sheet} {mapping} />
     <SheetFilters {sheet} />
   </div>
 
   {#if view === "mapping"}
-    <SheetTableMapping {sheet} />
+    <SheetTableMapping {sheet} {mapping} />
   {:else}
     <SheetPreview data={sheet.data} />
   {/if}

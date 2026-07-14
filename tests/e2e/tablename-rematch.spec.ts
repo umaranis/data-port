@@ -61,18 +61,16 @@ test.describe("tableName change column re-matching", () => {
     await expect(page.getByRole("tab", { name: "Sheet1" })).toBeVisible();
   });
 
-  test("all dbColName inputs are filled before tableName is selected", async ({
+  test("no mapping rows are shown before an append table is selected", async ({
     page,
   }) => {
     await page.getByRole("button", { name: "Mapping" }).click();
-    const inputs = page.getByRole("table").locator('input[type="text"]');
-    await expect(inputs.nth(0)).toHaveValue("id");
-    await expect(inputs.nth(1)).toHaveValue("name");
-    await expect(inputs.nth(2)).toHaveValue("email");
-    await expect(inputs.nth(3)).toHaveValue("dept");
+    // Append targets come from the DB schema; with no table chosen there are none.
+    const rows = page.getByRole("table").locator("tbody tr");
+    await expect(rows).toHaveCount(0);
   });
 
-  test("dbColNames not in DB are cleared when tableName is changed", async ({
+  test("only the DB table's columns are shown when tableName is selected", async ({
     page,
   }) => {
     await page.getByRole("button", { name: "Mapping" }).click();

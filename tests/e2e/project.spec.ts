@@ -15,11 +15,25 @@ const FAKE_PROJECT = {
   sheets: [
     {
       name: SHEET_NAME,
-      action: "create",
-      tableName: "sheet1",
+      skipped: false,
       headerRow: 0,
       skipRows: [],
-      columns: [],
+      mappings: [
+        {
+          action: "create",
+          tableName: "sheet1",
+          columns: [
+            {
+              target: { dbColName: "id", dataType: "text" },
+              source: { kind: "sheet", sheetColIndex: 0 },
+            },
+            {
+              target: { dbColName: "name", dataType: "text" },
+              source: { kind: "sheet", sheetColIndex: 1 },
+            },
+          ],
+        },
+      ],
     },
   ],
 };

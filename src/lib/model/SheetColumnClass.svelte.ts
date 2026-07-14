@@ -1,31 +1,12 @@
-import type { DbColumn } from "./pgTypes";
+import type { PgType } from "./pgTypes";
 
-export type SheetColumn =
-  | ({
-      type: "sheet";
-      readonly header: string;
-      excluded: boolean;
-    } & DbColumn)
-  | ({
-      type: "duplicate";
-      sourceColIndex: number;
-    } & DbColumn)
-  | ({
-      type: "static";
-      text: string | null;
-    } & DbColumn)
-  | ({
-      type: "formula";
-      formula: string | null;
-    } & DbColumn)
-  | ({
-      type: "db-serial";
-      dbSequenceName: string | null;
-    } & DbColumn)
-  | ({
-      type: "custom-sequence";
-      sequenceStart: number | null;
-      padding: number | null;
-      prefix: string | null;
-      postfix: string | null;
-    } & DbColumn);
+/** A column that exists in the source sheet, identified by its header. This is
+ * pure source-side metadata: the header text plus a suggested type used only to
+ * seed create Mappings. All mapping/database concerns live on the Mapping. */
+export type SheetColumn = {
+  header: string;
+  dataType: PgType;
+  length?: number;
+  precision?: number;
+  scale?: number;
+};

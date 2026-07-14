@@ -79,8 +79,9 @@ test.describe("create insert flow", () => {
   });
 
   test("shows error when column names are blank", async ({ page }) => {
+    await page.getByRole("button", { name: "Mapping" }).click();
     await page.getByRole("table").locator('input[type="text"]').first().clear();
-    await page.getByRole("button", { name: "Insert rows" }).click();    
+    await page.getByRole("button", { name: "Insert rows" }).click();
     await expect(
       page.getByText("All column names must be set before inserting."),
     ).toBeVisible();
@@ -88,7 +89,8 @@ test.describe("create insert flow", () => {
 
   test("pg_insert_rows is not called when column names are blank", async ({
     page,
-  }) => {    
+  }) => {
+    await page.getByRole("button", { name: "Mapping" }).click();
     await page.getByRole("table").locator('input[type="text"]').first().clear();
     await page.getByRole("button", { name: "Insert rows" }).click();
     await expect(
@@ -114,22 +116,36 @@ test.describe("create insert flow", () => {
     expect(call.tableName).toBe(SHEET_NAME);
   });
 
-  test("pg_insert_rows receives correct columnNames", async ({ page }) => {
+  test("pg_insert_rows receives a target per column with the right dbColName", async ({
+    page,
+  }) => {
     await fillColumnNames(page, COLUMN_NAMES);
     await page.getByRole("button", { name: "Insert rows" }).click();
     await expect(page.getByText("2 rows inserted.")).toBeVisible();
 
     const call = await getLastInsertCall(page);
-    expect(call.columnNames).toEqual(COLUMN_NAMES);
+    expect(call.targets.map((t: any) => t.dbColName)).toEqual(COLUMN_NAMES);
   });
 
-  test("pg_insert_rows uses text as default column type", async ({ page }) => {
+  test("pg_insert_rows targets use text as default type and sheet-index sources", async ({
+    page,
+  }) => {
     await fillColumnNames(page, COLUMN_NAMES);
     await page.getByRole("button", { name: "Insert rows" }).click();
     await expect(page.getByText("2 rows inserted.")).toBeVisible();
 
     const call = await getLastInsertCall(page);
-    expect(call.columnTypes).toEqual(["text", "text", "text"]);
+    expect(call.targets.map((t: any) => t.dataType)).toEqual([
+      "text",
+      "text",
+      "text",
+    ]);
+    // Each create target is sourced from its own sheet column, referenced by index.
+    expect(call.targets.map((t: any) => t.source)).toEqual([
+      { kind: "sheet", sheetColIndex: 0 },
+      { kind: "sheet", sheetColIndex: 1 },
+      { kind: "sheet", sheetColIndex: 2 },
+    ]);
   });
 
   test("custom table name is passed to pg_insert_rows", async ({ page }) => {

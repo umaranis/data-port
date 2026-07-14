@@ -79,7 +79,9 @@ test.describe("append insert flow", () => {
     await expect(page.getByText("2 rows inserted.")).toBeVisible();
   });
 
-  test("pg_insert_rows receives correct columnNames", async ({ page }) => {
+  test("pg_insert_rows targets cover the DB columns sourced from the sheet", async ({
+    page,
+  }) => {
     await switchToAppend(page);
     await page.getByRole("button", { name: "Insert rows" }).click();
     await expect(page.getByText("2 rows inserted.")).toBeVisible();
@@ -90,7 +92,17 @@ test.describe("append insert flow", () => {
     });
 
     expect(call).toBeDefined();
-    expect(call.columnNames).toEqual(["id", "name", "department"]);
+    expect(call.targets.map((t: any) => t.dbColName)).toEqual([
+      "id",
+      "name",
+      "department",
+    ]);
+    // Each DB column auto-matched to the sheet column of the same friendly name.
+    expect(call.targets.map((t: any) => t.source)).toEqual([
+      { kind: "sheet", sheetColIndex: 0 },
+      { kind: "sheet", sheetColIndex: 1 },
+      { kind: "sheet", sheetColIndex: 2 },
+    ]);
     expect(call.tableName).toBe(DB_TABLE);
   });
 

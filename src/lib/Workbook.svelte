@@ -4,13 +4,12 @@
   import Sheet from "$lib/Sheet.svelte";
   import { WorkbookClass } from "./model/WorkbookClass.svelte.js";
 
-  import { type SheetAction } from "./model/SheetClass.svelte.js";
+  import { type MappingAction } from "./model/mappingTypes";
 
-  const SHEET_ACTIONS: { value: SheetAction; label: string }[] = [
+  const SHEET_ACTIONS: { value: MappingAction; label: string }[] = [
     { value: "create", label: "create table" },
     { value: "append", label: "append table" },
     { value: "recreate", label: "re-create table" },
-    { value: "skip", label: "skip sheet" },
   ];
 
   type Props = {
@@ -47,9 +46,9 @@
                 {sheet.name}
                 <Select.Root
                   type="single"
-                  value={sheet.action}
+                  value={sheet.selectedMapping.action}
                   onValueChange={async (value) => {
-                    sheet.setAction(value as SheetAction);
+                    sheet.selectedMapping.setAction(value as MappingAction);
                   }}
                 >
                   <Select.Trigger
@@ -57,7 +56,9 @@
                     class="ml-1 text-xs h-auto py-0.5 font-normal"
                     onclick={(e) => e.stopPropagation()}
                   >
-                    {SHEET_ACTIONS.find((a) => a.value === sheet.action)?.label}
+                    {SHEET_ACTIONS.find(
+                      (a) => a.value === sheet.selectedMapping.action,
+                    )?.label}
                   </Select.Trigger>
                   <Select.Content>
                     {#each SHEET_ACTIONS as action}

@@ -1,3 +1,4 @@
+use crate::db::TargetSpec;
 use crate::{cell_to_string, infer::ColumnMeta, SheetCache};
 use odbc_api::{buffers::TextRowSet, ConnectionOptions, Cursor, Environment};
 
@@ -167,8 +168,7 @@ pub async fn db2_insert_rows(
   path: String,
   sheet: String,
   table_name: String,
-  column_types: Vec<String>,
-  column_names: Vec<String>,
+  targets: Vec<TargetSpec>,
   header_row: usize,
   skip_rows: Vec<usize>,
   cache: tauri::State<'_, SheetCache>,
@@ -200,20 +200,19 @@ pub async fn db2_insert_rows(
     return Ok(0);
   }
 
-  let db_columns: Vec<String> = (0..headers.len())
-    .map(|i| {
-      let custom = column_names.get(i).map(|s| s.as_str()).unwrap_or("");
-      if custom.is_empty() {
-        headers[i].clone()
-      } else {
-        custom.to_string()
-      }
-    })
+  // Only materialized (sheet/static) targets take part in the INSERT; unmapped
+  // targets are omitted so the database supplies their defaults. Order preserved.
+  let cols: Vec<TargetSpec> = targets
+    .into_iter()
+    .filter(|t| t.source.is_materialized())
     .collect();
+  if cols.is_empty() {
+    return Ok(0);
+  }
 
-  let col_list = db_columns
+  let col_list = cols
     .iter()
-    .map(|h| format!("\"{}\"", h))
+    .map(|t| format!("\"{}\"", t.db_col_name))
     .collect::<Vec<_>>()
     .join(", ");
 
@@ -228,11 +227,11 @@ pub async fn db2_insert_rows(
     let is_text = |t: &str| matches!(t, "text" | "varchar");
 
     for row in &data_rows {
-      let values: Vec<String> = (0..headers.len())
-        .map(|i| {
-          let val = row.get(i).cloned().unwrap_or_default();
-          let col_type = column_types.get(i).map(|s| s.as_str()).unwrap_or("text");
-          if val.is_empty() && !is_text(col_type) {
+      let values: Vec<String> = cols
+        .iter()
+        .map(|t| {
+          let val = t.source.resolve(row).unwrap_or_default();
+          if val.is_empty() && !is_text(&t.data_type) {
             "NULL".to_string()
           } else {
             format!("'{}'", val.replace('\'', "''"))

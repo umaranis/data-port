@@ -1,5 +1,54 @@
 use crate::{cell_to_string, infer::ColumnMeta, SheetCache};
+use serde::Deserialize;
 use tokio_postgres::NoTls;
+
+/// Where a Target Column's values come from. Mirrors the frontend `Source` union.
+/// Sheet sources reference their column by index (position). Only `sheet` and
+/// `static` are resolved server-side today; the rest are modelled but omitted
+/// from the INSERT.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(tag = "kind", rename_all = "kebab-case")]
+pub enum Source {
+  Sheet {
+    #[serde(rename = "sheetColIndex")]
+    sheet_col_index: usize,
+  },
+  Static {
+    value: Option<String>,
+  },
+  Expression {},
+  DbSerial {},
+  CustomSequence {},
+  None,
+}
+
+impl Source {
+  /// Resolve the value this Source supplies for a given data row, or `None` if
+  /// the Source is not materialized (and therefore omitted from the INSERT).
+  pub fn resolve(&self, row: &[String]) -> Option<String> {
+    match self {
+      Source::Sheet { sheet_col_index } => {
+        Some(row.get(*sheet_col_index).cloned().unwrap_or_default())
+      }
+      Source::Static { value } => Some(value.clone().unwrap_or_default()),
+      _ => None,
+    }
+  }
+
+  pub fn is_materialized(&self) -> bool {
+    matches!(self, Source::Sheet { .. } | Source::Static { .. })
+  }
+}
+
+/// One Target Column of a Mapping: its DB column name, its data type, and the
+/// Source that fills it.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TargetSpec {
+  pub db_col_name: String,
+  pub data_type: String,
+  pub source: Source,
+}
 
 pub fn full_error(e: &dyn std::error::Error) -> String {
   let mut msg = e.to_string();
@@ -23,39 +72,42 @@ fn quote_table(name: &str) -> String {
 async fn execute_insert(
   client: &mut tokio_postgres::Client,
   table_name: &str,
-  column_names: &[String],
-  column_types: &[String],
-  headers: &[String],
+  targets: &[TargetSpec],
   data_rows: &[Vec<String>],
 ) -> Result<usize, String> {
   if data_rows.is_empty() {
     return Ok(0);
   }
 
+  // Only materialized (sheet/static) targets take part in the INSERT; unmapped
+  // targets are omitted so the database supplies their defaults. Target order is
+  // preserved.
+  let cols: Vec<&TargetSpec> = targets
+    .iter()
+    .filter(|t| t.source.is_materialized())
+    .collect();
+  if cols.is_empty() {
+    return Ok(0);
+  }
+
   let quoted_table = quote_table(table_name);
 
-  let db_columns: Vec<&str> = (0..headers.len())
-    .map(|i| {
-      let custom = column_names.get(i).map(|s| s.as_str()).unwrap_or("");
-      if custom.is_empty() { headers[i].as_str() } else { custom }
-    })
-    .collect();
-
-  let col_list = db_columns
+  let col_list = cols
     .iter()
-    .map(|h| format!("\"{}\"", h))
+    .map(|t| format!("\"{}\"", t.db_col_name))
     .collect::<Vec<_>>()
     .join(", ");
 
   let is_text = |t: &str| matches!(t, "text" | "varchar");
 
-  let placeholders = (0..headers.len())
-    .map(|i| {
-      let pg_type = column_types.get(i).map(|s| s.as_str()).unwrap_or("text");
-      if is_text(pg_type) {
+  let placeholders = cols
+    .iter()
+    .enumerate()
+    .map(|(i, t)| {
+      if is_text(&t.data_type) {
         format!("${}", i + 1)
       } else {
-        format!("${}::{}", i + 1, pg_type)
+        format!("${}::{}", i + 1, t.data_type)
       }
     })
     .collect::<Vec<_>>()
@@ -69,18 +121,18 @@ async fn execute_insert(
     .await
     .map_err(|e| full_error(&e))?;
 
-  let text_types = vec![tokio_postgres::types::Type::TEXT; headers.len()];
+  let text_types = vec![tokio_postgres::types::Type::TEXT; cols.len()];
   let stmt = tx
     .prepare_typed(&insert_sql, &text_types)
     .await
     .map_err(|e| full_error(&e))?;
 
   for row in data_rows {
-    let params: Vec<Option<String>> = (0..headers.len())
-      .map(|i| {
-        let val = row.get(i).cloned().unwrap_or_default();
-        let pg_type = column_types.get(i).map(|s| s.as_str()).unwrap_or("text");
-        if val.is_empty() && !is_text(pg_type) { None } else { Some(val) }
+    let params: Vec<Option<String>> = cols
+      .iter()
+      .map(|t| {
+        let val = t.source.resolve(row).unwrap_or_default();
+        if val.is_empty() && !is_text(&t.data_type) { None } else { Some(val) }
       })
       .collect();
     let params_ref: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> =
@@ -145,8 +197,7 @@ pub async fn pg_insert_rows(
   path: String,
   sheet: String,
   table_name: String,
-  column_types: Vec<String>,
-  column_names: Vec<String>,
+  targets: Vec<TargetSpec>,
   header_row: usize,
   skip_rows: Vec<usize>,
   cache: tauri::State<'_, SheetCache>,
@@ -181,7 +232,7 @@ pub async fn pg_insert_rows(
     let _ = connection.await;
   });
 
-  execute_insert(&mut client, &table_name, &column_names, &column_types, &headers, &data_rows).await
+  execute_insert(&mut client, &table_name, &targets, &data_rows).await
 }
 
 #[tauri::command]

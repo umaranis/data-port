@@ -14,8 +14,9 @@ const MULTI_ROWS = [
   ["2", "Bob", "Sales"],
 ];
 
-// A persisted project with two sheets.  Each sheet has 3 columns with distinct
-// dbColNames and non-default data types to verify per-sheet restore fidelity.
+// A persisted project with two sheets. Each sheet has one create Mapping with 3
+// Column Mappings — distinct target names and non-default types — to verify
+// per-sheet restore fidelity.
 const MULTI_PROJECT = {
   name: "multi-sheet",
   filePath: FAKE_PATH,
@@ -23,62 +24,53 @@ const MULTI_PROJECT = {
   sheets: [
     {
       name: SHEET1,
-      action: "create",
-      tableName: "employees_tbl",
+      skipped: false,
       headerRow: 0,
       skipRows: [],
-      columns: [
+      mappings: [
         {
-          type: "sheet",
-          header: "id",
-          dataType: "integer",
-          dbColName: "emp_id",
-          excluded: false,
-        },
-        {
-          type: "sheet",
-          header: "name",
-          dataType: "text",
-          dbColName: "full_name",
-          excluded: false,
-        },
-        {
-          type: "sheet",
-          header: "dept",
-          dataType: "varchar",
-          length: 50,
-          dbColName: "department",
-          excluded: false,
+          action: "create",
+          tableName: "employees_tbl",
+          columns: [
+            {
+              target: { dbColName: "emp_id", dataType: "integer" },
+              source: { kind: "sheet", sheetColIndex: 0 },
+            },
+            {
+              target: { dbColName: "full_name", dataType: "text" },
+              source: { kind: "sheet", sheetColIndex: 1 },
+            },
+            {
+              target: { dbColName: "department", dataType: "varchar", length: 50 },
+              source: { kind: "sheet", sheetColIndex: 2 },
+            },
+          ],
         },
       ],
     },
     {
       name: SHEET2,
-      action: "skip",
-      tableName: null,
+      skipped: false,
       headerRow: 0,
       skipRows: [],
-      columns: [
+      mappings: [
         {
-          type: "sheet",
-          header: "id",
-          dataType: "integer",
-          dbColName: "prod_id",
-          excluded: false,
-        },
-        {
-          type: "sheet",
-          header: "name",
-          dataType: "text",
-          dbColName: "product_name",
-          excluded: false,
-        },
-        {
-          type: "sheet",
-          header: "dept",
-          dataType: "text",
-          dbColName: "category",
-          excluded: false,
+          action: "create",
+          tableName: "products_tbl",
+          columns: [
+            {
+              target: { dbColName: "prod_id", dataType: "integer" },
+              source: { kind: "sheet", sheetColIndex: 0 },
+            },
+            {
+              target: { dbColName: "product_name", dataType: "text" },
+              source: { kind: "sheet", sheetColIndex: 1 },
+            },
+            {
+              target: { dbColName: "category", dataType: "text" },
+              source: { kind: "sheet", sheetColIndex: 2 },
+            },
+          ],
         },
       ],
     },
@@ -86,7 +78,6 @@ const MULTI_PROJECT = {
 };
 
 // A persisted project where the Employees sheet uses row 1 as the header row.
-// Columns match MULTI_ROWS[1] so applySnapshot can merge them by header name.
 const HEADERROW1_PROJECT = {
   name: "headerrow1",
   filePath: FAKE_PATH,
@@ -94,61 +85,53 @@ const HEADERROW1_PROJECT = {
   sheets: [
     {
       name: SHEET1,
-      action: "create",
-      tableName: "employees_tbl",
+      skipped: false,
       headerRow: 1,
       skipRows: [],
-      columns: [
+      mappings: [
         {
-          type: "sheet",
-          header: "emp_id",
-          dataType: "text",
-          dbColName: "emp_id",
-          excluded: false,
-        },
-        {
-          type: "sheet",
-          header: "full_name",
-          dataType: "text",
-          dbColName: "full_name",
-          excluded: false,
-        },
-        {
-          type: "sheet",
-          header: "team",
-          dataType: "text",
-          dbColName: "team",
-          excluded: false,
+          action: "create",
+          tableName: "employees_tbl",
+          columns: [
+            {
+              target: { dbColName: "emp_id", dataType: "text" },
+              source: { kind: "sheet", sheetColIndex: 0 },
+            },
+            {
+              target: { dbColName: "full_name", dataType: "text" },
+              source: { kind: "sheet", sheetColIndex: 1 },
+            },
+            {
+              target: { dbColName: "team", dataType: "text" },
+              source: { kind: "sheet", sheetColIndex: 2 },
+            },
+          ],
         },
       ],
     },
     {
       name: SHEET2,
-      action: "create",
-      tableName: "products_tbl",
+      skipped: false,
       headerRow: 0,
       skipRows: [],
-      columns: [
+      mappings: [
         {
-          type: "sheet",
-          header: "id",
-          dataType: "text",
-          dbColName: "id",
-          excluded: false,
-        },
-        {
-          type: "sheet",
-          header: "name",
-          dataType: "text",
-          dbColName: "name",
-          excluded: false,
-        },
-        {
-          type: "sheet",
-          header: "dept",
-          dataType: "text",
-          dbColName: "dept",
-          excluded: false,
+          action: "create",
+          tableName: "products_tbl",
+          columns: [
+            {
+              target: { dbColName: "id", dataType: "text" },
+              source: { kind: "sheet", sheetColIndex: 0 },
+            },
+            {
+              target: { dbColName: "name", dataType: "text" },
+              source: { kind: "sheet", sheetColIndex: 1 },
+            },
+            {
+              target: { dbColName: "dept", dataType: "text" },
+              source: { kind: "sheet", sheetColIndex: 2 },
+            },
+          ],
         },
       ],
     },
@@ -228,8 +211,8 @@ test.describe("save multi-sheet project", () => {
     await saveProject(page, "multi-sheet");
 
     const call = await getLastCall(page, "save_project");
-    expect(call.payload.sheets[0].tableName).toBe("employees_db");
-    expect(call.payload.sheets[1].tableName).toBe("products_db");
+    expect(call.payload.sheets[0].mappings[0].tableName).toBe("employees_db");
+    expect(call.payload.sheets[1].mappings[0].tableName).toBe("products_db");
   });
 
   test("payload captures distinct column dbColNames per sheet", async ({
@@ -260,15 +243,15 @@ test.describe("save multi-sheet project", () => {
     await saveProject(page, "multi-sheet");
 
     const call = await getLastCall(page, "save_project");
-    const s1cols = call.payload.sheets[0].columns;
-    expect(s1cols[0].dbColName).toBe("emp_id");
-    expect(s1cols[1].dbColName).toBe("full_name");
-    expect(s1cols[2].dbColName).toBe("department");
+    const s1cols = call.payload.sheets[0].mappings[0].columns;
+    expect(s1cols[0].target.dbColName).toBe("emp_id");
+    expect(s1cols[1].target.dbColName).toBe("full_name");
+    expect(s1cols[2].target.dbColName).toBe("department");
 
-    const s2cols = call.payload.sheets[1].columns;
-    expect(s2cols[0].dbColName).toBe("prod_id");
-    expect(s2cols[1].dbColName).toBe("product_name");
-    expect(s2cols[2].dbColName).toBe("category");
+    const s2cols = call.payload.sheets[1].mappings[0].columns;
+    expect(s2cols[0].target.dbColName).toBe("prod_id");
+    expect(s2cols[1].target.dbColName).toBe("product_name");
+    expect(s2cols[2].target.dbColName).toBe("category");
   });
 
   test("payload captures column count for each sheet", async ({ page }) => {
@@ -279,11 +262,11 @@ test.describe("save multi-sheet project", () => {
     await saveProject(page, "multi-sheet");
 
     const call = await getLastCall(page, "save_project");
-    expect(call.payload.sheets[0].columns).toHaveLength(3);
-    expect(call.payload.sheets[1].columns).toHaveLength(3);
+    expect(call.payload.sheets[0].mappings[0].columns).toHaveLength(3);
+    expect(call.payload.sheets[1].mappings[0].columns).toHaveLength(3);
   });
 
-  test("payload captures sheet action changes", async ({ page }) => {
+  test("payload captures per-mapping action changes", async ({ page }) => {
     // Change Sheet2 action using the select inside its tab — this does NOT switch
     // the active tab because the trigger calls e.stopPropagation().
     await page
@@ -291,13 +274,13 @@ test.describe("save multi-sheet project", () => {
       .filter({ hasText: SHEET2 })
       .getByRole("button", { name: "create table" })
       .click();
-    await page.getByRole("option", { name: "skip sheet" }).click();
+    await page.getByRole("option", { name: "re-create table" }).click();
 
     await saveProject(page, "multi-sheet");
 
     const call = await getLastCall(page, "save_project");
-    expect(call.payload.sheets[0].action).toBe("create");
-    expect(call.payload.sheets[1].action).toBe("skip");
+    expect(call.payload.sheets[0].mappings[0].action).toBe("create");
+    expect(call.payload.sheets[1].mappings[0].action).toBe("recreate");
   });
 
   test("payload headerRow defaults to 0 for each sheet", async ({ page }) => {
@@ -330,7 +313,8 @@ test.describe("save multi-sheet project", () => {
     // The #header-row input is 1-based: entering "2" sets headerRow to 1.
     await page.locator("#header-row").fill("2");
     await page.locator("#header-row").press("Tab");
-    // Wait for the sheet to reload with the new header (row 1: emp_id, full_name, team).
+    // Wait for the sheet to reload with the new header (row 1: emp_id, full_name, team),
+    // which re-seeds the create Mapping's target names to the friendly headers.
     await page.getByRole("button", { name: "Mapping" }).click();
     await expect(
       page.getByRole("table").locator('input[type="text"]').first(),
@@ -340,9 +324,10 @@ test.describe("save multi-sheet project", () => {
 
     const call = await getLastCall(page, "save_project");
     expect(call.payload.sheets[0].headerRow).toBe(1);
-    expect(call.payload.sheets[0].columns[0].header).toBe("emp_id");
-    expect(call.payload.sheets[0].columns[1].header).toBe("full_name");
-    expect(call.payload.sheets[0].columns[2].header).toBe("team");
+    const cols = call.payload.sheets[0].mappings[0].columns;
+    expect(cols[0].target.dbColName).toBe("emp_id");
+    expect(cols[1].target.dbColName).toBe("full_name");
+    expect(cols[2].target.dbColName).toBe("team");
   });
 });
 
@@ -362,13 +347,12 @@ test.describe("load multi-sheet project", () => {
     // Wait for both sheet tabs — this means WorkbookClass.deserialize has returned.
     await expect(page.getByRole("tab", { name: SHEET1 })).toBeVisible();
     await expect(page.getByRole("tab", { name: SHEET2 })).toBeVisible();
-    // "skip sheet" appearing in the Products tab confirms applySnapshot ran for Sheet2
-    // and all microtasks (including column merges) have settled before any test starts.
-    await expect(page.getByText("skip sheet")).toBeVisible();
+    // Employees is active after load; its restored table name confirms applySnapshot
+    // and all column merges have settled before any test starts.
+    await expect(page.locator("#table-name")).toHaveValue("employees_tbl");
   });
 
   test("both sheet tabs are visible", async ({ page }) => {
-    // Already asserted in beforeEach; re-assert for clarity as a standalone test.
     await expect(page.getByRole("tab", { name: SHEET1 })).toBeVisible();
     await expect(page.getByRole("tab", { name: SHEET2 })).toBeVisible();
   });
@@ -378,7 +362,6 @@ test.describe("load multi-sheet project", () => {
   });
 
   test("employees sheet table name is restored", async ({ page }) => {
-    // Employees is the active sheet after load.
     await expect(page.locator("#table-name")).toHaveValue("employees_tbl");
   });
 
@@ -387,7 +370,6 @@ test.describe("load multi-sheet project", () => {
   }) => {
     await page.getByRole("button", { name: "Mapping" }).click();
     const inputs = page.getByRole("table").locator('input[type="text"]');
-    // applySnapshot merges saved dbColNames; Playwright retries until settled.
     await expect(inputs.nth(0)).toHaveValue("emp_id");
     await expect(inputs.nth(1)).toHaveValue("full_name");
     await expect(inputs.nth(2)).toHaveValue("department");
@@ -409,25 +391,17 @@ test.describe("load multi-sheet project", () => {
     await expect(page.locator('input[placeholder="length"]')).toHaveValue("50");
   });
 
-  test("products sheet action is restored to skip", async ({ page }) => {
-    // "skip sheet" text appears in the Products tab action select trigger.
-    // Action is set synchronously by applySnapshot before loadSheet runs.
-    await expect(page.getByText("skip sheet")).toBeVisible();
-  });
-
-  test("products tab does not show table name input (skip action)", async ({
+  test("products sheet table name is restored independently", async ({
     page,
   }) => {
     await switchSheet(page, SHEET2);
-    // "skip" action renders an empty div in SheetActionOptions — no #table-name.
-    await expect(page.locator("#table-name")).not.toBeVisible();
+    await expect(page.locator("#table-name")).toHaveValue("products_tbl");
   });
 
   test("products column names are restored independently from employees", async ({
     page,
   }) => {
     await switchSheet(page, SHEET2);
-    // Wait for the mapping table to appear after Products loads.
     await page.getByRole("button", { name: "Mapping" }).click();
     const inputs = page.getByRole("table").locator('input[type="text"]');
     await expect(inputs.nth(0)).toHaveValue("prod_id");
@@ -474,9 +448,7 @@ test.describe("load project with headerRow=1", () => {
     await expect(page.locator("#header-row")).toHaveValue("2");
   });
 
-  test("employees columns use headers from row 1 after restore", async ({
-    page,
-  }) => {
+  test("employees columns use restored target names", async ({ page }) => {
     await page.getByRole("button", { name: "Mapping" }).click();
     const inputs = page.getByRole("table").locator('input[type="text"]');
     await expect(inputs.nth(0)).toHaveValue("emp_id");

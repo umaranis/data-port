@@ -1,15 +1,19 @@
-import type { SheetAction } from "./SheetClass.svelte";
-import type { SheetColumn } from "./SheetColumnClass.svelte";
+import type { ColumnMapping, MappingAction } from "./mappingTypes";
 
 export type DbType = "postgres" | "db2";
 
+export type ProjectMapping = {
+  action: MappingAction;
+  tableName: string | null;
+  columns: ColumnMapping[];
+};
+
 export type ProjectSheet = {
   name: string;
-  action: SheetAction;
-  tableName: string | null;
+  skipped: boolean;
   headerRow: number;
   skipRows: number[];
-  columns: Readonly<SheetColumn>[];
+  mappings: ProjectMapping[];
 };
 
 export type Project = {

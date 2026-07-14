@@ -4,17 +4,17 @@
   import { pgTypeStr } from "$lib/model/pgTypes";
   import { db2TypeStr } from "$lib/model/db2Types";
   import type { DbType } from "$lib/model/projectTypes";
-  import type { SheetClass } from "./model/SheetClass.svelte";
+  import type { SheetMappingClass } from "./model/SheetMappingClass.svelte";
 
   type Props = {
-    sheet: SheetClass;
+    mapping: SheetMappingClass;
     connectionString?: string | null;
     dbType?: DbType;
     dropTable?: boolean;
   };
 
   let {
-    sheet,
+    mapping,
     connectionString: savedConnString,
     dbType = "postgres",
     dropTable = false,
@@ -26,20 +26,14 @@
   let executing = $state(false);
 
   let sql = $derived.by(() => {
-    if (!sheet.tableName || sheet.columns.length === 0) return "";
+    if (!mapping.tableName || mapping.columns.length === 0) return "";
     const typeStr = dbType === "db2" ? db2TypeStr : pgTypeStr;
-    const cols = sheet.columns.map((h) => {
-      if (h.dbColName) {
-        const name = h.dbColName;
-        const type = typeStr(h);
-        return `  "${name}" ${type}`;
-      } else {
-        return "";
-      }
-    });
-    const create = `CREATE TABLE "${sheet.tableName}" (\n${cols.join(",\n")}\n);`;
+    const cols = mapping.columns
+      .filter((cm) => cm.target.dbColName)
+      .map((cm) => `  "${cm.target.dbColName}" ${typeStr(cm.target)}`);
+    const create = `CREATE TABLE "${mapping.tableName}" (\n${cols.join(",\n")}\n);`;
     return dropTable
-      ? `DROP TABLE IF EXISTS "${sheet.tableName}";\n${create}`
+      ? `DROP TABLE IF EXISTS "${mapping.tableName}";\n${create}`
       : create;
   });
 

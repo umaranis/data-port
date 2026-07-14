@@ -1,26 +1,19 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { WorkbookClass } from "./WorkbookClass.svelte";
-import { convertToDBFriendlyName, type DbColumn } from "$lib/model/pgTypes";
+import { type DbColumn, type PgType } from "$lib/model/pgTypes";
 import { type SheetColumn } from "./SheetColumnClass.svelte";
 import { SheetDataClass } from "./SheetDataClass.svelte";
 import type { ProjectSheet } from "./projectTypes";
+import { SheetMappingClass } from "./SheetMappingClass.svelte";
 
-export type SheetAction = "create" | "append" | "recreate" | "skip";
-
+/** One tab of a workbook, treated purely as a data source. Owns the header row,
+ * skipped rows, its raw Sheet Columns, and paged data, plus one or more Mappings
+ * describing how it loads into the database. */
 export class SheetClass {
   public name: string;
   private _workbook: WorkbookClass;
   public get workbook(): WorkbookClass {
     return this._workbook;
-  }
-  private _tableName: string | null;
-  public get tableName() {
-    return this._tableName;
-  }
-  public set tableName(value) {
-    this._tableName = value;
-    this.generateDBColNames();
-    this.reMatchColumnsWithDB();
   }
 
   private _data = new SheetDataClass(this);
@@ -28,83 +21,40 @@ export class SheetClass {
     return this._data;
   }
 
+  private _mappings: SheetMappingClass[] = $state([]);
+  public get mappings(): ReadonlyArray<SheetMappingClass> {
+    return this._mappings;
+  }
+
+  private _selectedMappingIndex: number = $state(0);
+  public get selectedMappingIndex(): number {
+    return this._selectedMappingIndex;
+  }
+  public set selectedMappingIndex(value: number) {
+    this._selectedMappingIndex = value;
+  }
+  public get selectedMapping(): SheetMappingClass {
+    return this._mappings[this._selectedMappingIndex] ?? this._mappings[0];
+  }
+
+  /** A skipped Sheet is excluded from loading entirely; its Mappings are ignored. */
+  private _skipped: boolean = $state(false);
+  public get skipped(): boolean {
+    return this._skipped;
+  }
+  public set skipped(value: boolean) {
+    this._skipped = value;
+  }
+
   constructor(name: string, workbook: WorkbookClass) {
     this.name = name;
     this._workbook = workbook;
-    this._tableName = $state(convertToDBFriendlyName(name));
+    this._mappings = [new SheetMappingClass(this, workbook.database)];
   }
 
   private _loaded: boolean = $state(false);
   public get loaded(): boolean {
     return this._loaded;
-  }
-
-  private _action: SheetAction = $state("create");
-  public get action(): SheetAction {
-    return this._action;
-  }
-  public async setAction(value: SheetAction) {
-    this._action = value;
-    this.generateDBColNames();
-    if (value === "append") {
-      await this.setActionAppend();
-    } else {
-      this.tableName = this.tableName || convertToDBFriendlyName(this.name);
-      this.dbColumns = null;
-    }
-  }
-  private async setActionAppend() {
-    this._action = "append";
-    const match = this.workbook.database.tables.find(
-      (t) => t === this.tableName || t.split(".").pop() === this.tableName,
-    );
-    this.tableName = match ?? null;
-    await this.reMatchColumnsWithDB();
-  }
-
-  private async reMatchColumnsWithDB() {
-    if (this.tableName && this.action === "append") {
-      const dbCols = await this.workbook.database.loadDbColumns(this.tableName);
-
-      this.dbColumns = dbCols;
-      const used = new Set<DbColumn>(); // identify already matched columns, don't want to use the same column twice, a sheet can have multiple columns with same header text
-      this._columns = this._columns.map((sheetCol) => {
-        const matchingDbCol = dbCols.find(
-          (dbCol) => dbCol.dbColName === sheetCol.dbColName && !used.has(dbCol),
-        );
-        if (matchingDbCol) {
-          used.add(matchingDbCol);
-          return {
-            ...sheetCol,
-            dataType: matchingDbCol.dataType,
-            length: matchingDbCol.length,
-            precision: matchingDbCol.precision,
-            scale: matchingDbCol.scale,
-          };
-        }
-        return { ...sheetCol, dbColName: undefined };
-      });
-    }
-  }
-
-  private generateDBColNames() {
-    this._columns.forEach((sheetCol) => {
-      if (!sheetCol.dbColName) {
-        switch (sheetCol.type) {
-          case "sheet":
-            sheetCol.dbColName = convertToDBFriendlyName(sheetCol.header);
-            break;
-
-          case "duplicate":
-            // eslint-disable-next-line no-case-declarations
-            const sourceCol = this._columns[sheetCol.sourceColIndex];
-            if ("header" in sourceCol) {
-              sheetCol.dbColName = convertToDBFriendlyName(sourceCol.header);
-            }
-            break;
-        }
-      }
-    });
   }
 
   private _headerRow: number = $state(0);
@@ -129,55 +79,17 @@ export class SheetClass {
   }
 
   private _columns: SheetColumn[] = $state([]);
-  // columns from the sheet appear first
   public get columns(): ReadonlyArray<SheetColumn> {
     return this._columns;
   }
   private setColumns(headers: string[]) {
     this._columns = headers.map((h) => ({
-      type: "sheet",
       header: h,
-      dataType: "text",
-      dbColName: convertToDBFriendlyName(h),
-      excluded: false,
+      dataType: "text" as PgType,
     }));
   }
 
-  // null if sheet action is 'create', may or may not be null if 'append'
-  // if not null, then sheet column name must match with dbColumns or column name is undefined
-  private _dbColumns: ReadonlyArray<Readonly<DbColumn>> | null =
-    $state.raw(null);
-  public get dbColumns(): ReadonlyArray<Readonly<DbColumn>> | null {
-    return this._dbColumns;
-  }
-  private set dbColumns(value: ReadonlyArray<Readonly<DbColumn>> | null) {
-    this._dbColumns = value;
-  }
-
-  public async applySnapshot(s: ProjectSheet) {
-    this._action = s.action;
-    this.tableName = s.tableName;
-    this._headerRow = s.headerRow;
-    this._skipRows = s.skipRows;
-    await this.loadSheet();
-    this._columns = this._columns.map((col) => {
-      const saved = s.columns.find(
-        (sc) =>
-          sc.type === "sheet" &&
-          col.type === "sheet" &&
-          sc.header === col.header,
-      );
-      return saved ? { ...col, ...saved } : col;
-    });
-    // load additional columns
-    s.columns.forEach((col) => {
-      if (col.type !== "sheet") {
-        this._columns.push(col);
-      }
-    });
-  }
-
-  public async loadSheet() {
+  public async loadSheet(reseed: boolean = true) {
     this._loaded = false;
     const headers = await invoke<string[]>("get_sheet_header", {
       path: this.workbook.filePath,
@@ -186,6 +98,9 @@ export class SheetClass {
     });
 
     this.setColumns(headers);
+    if (reseed) {
+      for (const m of this._mappings) m.onSheetColumnsChanged();
+    }
 
     this.data.loadPage(0);
 
@@ -200,19 +115,45 @@ export class SheetClass {
       skipRows: this.skipRows,
     });
 
-    types.forEach((type, index) => {
-      if (index < this._columns.length) {
-        const col = this._columns[index];
-        if (col.type === "sheet") {
-          this._columns[index] = {
+    // Update the raw source columns' suggested types, so future seeds carry them…
+    this._columns = this._columns.map((col, i) => {
+      const t = types[i];
+      return t
+        ? {
             ...col,
-            dataType: type.dataType,
-            length: type.length,
-            precision: type.precision,
-            scale: type.scale,
-          };
-        }
-      }
+            dataType: t.dataType,
+            length: t.length,
+            precision: t.precision,
+            scale: t.scale,
+          }
+        : col;
     });
+    // …and apply to the currently selected create/recreate mapping's targets.
+    this.selectedMapping?.applyInferredTypes(types);
+  }
+
+  public toSnapshot(): ProjectSheet {
+    return {
+      name: this.name,
+      skipped: this._skipped,
+      headerRow: this._headerRow,
+      skipRows: this._skipRows,
+      mappings: this._mappings.map((m) => m.toSnapshot()),
+    };
+  }
+
+  public async applySnapshot(s: ProjectSheet) {
+    this._skipped = s.skipped;
+    this._headerRow = s.headerRow;
+    this._skipRows = s.skipRows;
+    await this.loadSheet(false);
+    if (s.mappings.length > 0) {
+      this._mappings = s.mappings.map((pm) => {
+        const m = new SheetMappingClass(this, this.workbook.database);
+        m.deserialize(pm);
+        return m;
+      });
+      this._selectedMappingIndex = 0;
+    }
   }
 }

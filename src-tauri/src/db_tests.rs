@@ -244,6 +244,24 @@ async fn get_columns_returns_empty_for_nonexistent_table() {
 
 // ─── execute_insert ───────────────────────────────────────────────────────────
 
+/// A Target Column filled from a Sheet Column at the given index.
+fn sheet_target(db_col: &str, data_type: &str, idx: usize) -> TargetSpec {
+  TargetSpec {
+    db_col_name: db_col.to_string(),
+    data_type: data_type.to_string(),
+    source: Source::Sheet { sheet_col_index: idx },
+  }
+}
+
+/// A Target Column filled from a static constant.
+fn static_target(db_col: &str, data_type: &str, value: &str) -> TargetSpec {
+  TargetSpec {
+    db_col_name: db_col.to_string(),
+    data_type: data_type.to_string(),
+    source: Source::Static { value: Some(value.to_string()) },
+  }
+}
+
 #[tokio::test]
 async fn insert_text_rows_returns_correct_count() {
   let client = make_client().await;
@@ -251,12 +269,12 @@ async fn insert_text_rows_returns_correct_count() {
   setup_table(&client, &table, "name TEXT, city TEXT").await;
 
   let mut c = make_client().await;
-  let headers = vec!["name".to_string(), "city".to_string()];
+  let targets = vec![sheet_target("name", "text", 0), sheet_target("city", "text", 1)];
   let rows = vec![
     vec!["Alice".to_string(), "London".to_string()],
     vec!["Bob".to_string(), "Paris".to_string()],
   ];
-  let count = execute_insert(&mut c, &table, &[], &[], &headers, &rows).await.unwrap();
+  let count = execute_insert(&mut c, &table, &targets, &rows).await.unwrap();
 
   client.execute(&format!("DROP TABLE {table}"), &[]).await.unwrap();
   assert_eq!(count, 2);
@@ -269,9 +287,9 @@ async fn insert_rows_are_written_to_the_table() {
   setup_table(&client, &table, "name TEXT").await;
 
   let mut c = make_client().await;
-  let headers = vec!["name".to_string()];
+  let targets = vec![sheet_target("name", "text", 0)];
   let rows = vec![vec!["Alice".to_string()], vec!["Bob".to_string()]];
-  execute_insert(&mut c, &table, &[], &[], &headers, &rows).await.unwrap();
+  execute_insert(&mut c, &table, &targets, &rows).await.unwrap();
 
   let n = row_count(&client, &table).await;
   client.execute(&format!("DROP TABLE {table}"), &[]).await.unwrap();
@@ -285,8 +303,8 @@ async fn insert_empty_data_rows_returns_zero_without_touching_db() {
   setup_table(&client, &table, "name TEXT").await;
 
   let mut c = make_client().await;
-  let headers = vec!["name".to_string()];
-  let count = execute_insert(&mut c, &table, &[], &[], &headers, &[]).await.unwrap();
+  let targets = vec![sheet_target("name", "text", 0)];
+  let count = execute_insert(&mut c, &table, &targets, &[]).await.unwrap();
 
   let n = row_count(&client, &table).await;
   client.execute(&format!("DROP TABLE {table}"), &[]).await.unwrap();
@@ -301,10 +319,9 @@ async fn insert_with_integer_type_cast() {
   setup_table(&client, &table, "n INTEGER").await;
 
   let mut c = make_client().await;
-  let headers = vec!["n".to_string()];
-  let col_types = vec!["integer".to_string()];
+  let targets = vec![sheet_target("n", "integer", 0)];
   let rows = vec![vec!["42".to_string()], vec!["7".to_string()]];
-  execute_insert(&mut c, &table, &[], &col_types, &headers, &rows).await.unwrap();
+  execute_insert(&mut c, &table, &targets, &rows).await.unwrap();
 
   let n = row_count(&client, &table).await;
   client.execute(&format!("DROP TABLE {table}"), &[]).await.unwrap();
@@ -318,10 +335,9 @@ async fn insert_with_boolean_type_cast() {
   setup_table(&client, &table, "flag BOOLEAN").await;
 
   let mut c = make_client().await;
-  let headers = vec!["flag".to_string()];
-  let col_types = vec!["boolean".to_string()];
+  let targets = vec![sheet_target("flag", "boolean", 0)];
   let rows = vec![vec!["true".to_string()], vec!["false".to_string()]];
-  execute_insert(&mut c, &table, &[], &col_types, &headers, &rows).await.unwrap();
+  execute_insert(&mut c, &table, &targets, &rows).await.unwrap();
 
   let n = row_count(&client, &table).await;
   client.execute(&format!("DROP TABLE {table}"), &[]).await.unwrap();
@@ -335,10 +351,9 @@ async fn insert_empty_string_becomes_null_for_non_text_type() {
   setup_table(&client, &table, "n INTEGER").await;
 
   let mut c = make_client().await;
-  let headers = vec!["n".to_string()];
-  let col_types = vec!["integer".to_string()];
+  let targets = vec![sheet_target("n", "integer", 0)];
   let rows = vec![vec!["".to_string()]];
-  execute_insert(&mut c, &table, &[], &col_types, &headers, &rows).await.unwrap();
+  execute_insert(&mut c, &table, &targets, &rows).await.unwrap();
 
   let row = client
     .query_one(&format!("SELECT n FROM {table}"), &[])
@@ -356,9 +371,9 @@ async fn insert_empty_string_is_preserved_for_text_type() {
   setup_table(&client, &table, "s TEXT").await;
 
   let mut c = make_client().await;
-  let headers = vec!["s".to_string()];
+  let targets = vec![sheet_target("s", "text", 0)];
   let rows = vec![vec!["".to_string()]];
-  execute_insert(&mut c, &table, &[], &[], &headers, &rows).await.unwrap();
+  execute_insert(&mut c, &table, &targets, &rows).await.unwrap();
 
   let row = client
     .query_one(&format!("SELECT s FROM {table}"), &[])
@@ -370,37 +385,98 @@ async fn insert_empty_string_is_preserved_for_text_type() {
 }
 
 #[tokio::test]
-async fn insert_with_custom_column_names() {
+async fn insert_target_name_differs_from_sheet_header() {
+  // The Target Column name is independent of the Sheet Column it is sourced from.
   let client = make_client().await;
   let table = unique_table();
   setup_table(&client, &table, "db_col TEXT").await;
 
   let mut c = make_client().await;
-  let headers = vec!["sheet_col".to_string()];
-  let col_names = vec!["db_col".to_string()];
+  let targets = vec![sheet_target("db_col", "text", 0)];
   let rows = vec![vec!["hello".to_string()]];
-  execute_insert(&mut c, &table, &col_names, &[], &headers, &rows).await.unwrap();
+  execute_insert(&mut c, &table, &targets, &rows).await.unwrap();
 
-  let n = row_count(&client, &table).await;
+  let row = client
+    .query_one(&format!("SELECT db_col FROM {table}"), &[])
+    .await
+    .unwrap();
   client.execute(&format!("DROP TABLE {table}"), &[]).await.unwrap();
-  assert_eq!(n, 1);
+  let val: &str = row.get(0);
+  assert_eq!(val, "hello");
 }
 
 #[tokio::test]
-async fn insert_falls_back_to_header_when_column_name_is_empty() {
+async fn insert_static_source_writes_the_same_constant_for_every_row() {
   let client = make_client().await;
   let table = unique_table();
-  setup_table(&client, &table, "name TEXT").await;
+  setup_table(&client, &table, "name TEXT, tag TEXT").await;
 
   let mut c = make_client().await;
-  let headers = vec!["name".to_string()];
-  let col_names = vec!["".to_string()]; // empty → falls back to "name"
-  let rows = vec![vec!["Alice".to_string()]];
-  execute_insert(&mut c, &table, &col_names, &[], &headers, &rows).await.unwrap();
+  let targets = vec![sheet_target("name", "text", 0), static_target("tag", "text", "imported")];
+  let rows = vec![vec!["Alice".to_string()], vec!["Bob".to_string()]];
+  execute_insert(&mut c, &table, &targets, &rows).await.unwrap();
 
-  let n = row_count(&client, &table).await;
+  let tags: Vec<String> = client
+    .query(&format!("SELECT tag FROM {table} ORDER BY name"), &[])
+    .await
+    .unwrap()
+    .iter()
+    .map(|r| r.get::<_, String>(0))
+    .collect();
   client.execute(&format!("DROP TABLE {table}"), &[]).await.unwrap();
-  assert_eq!(n, 1);
+  assert_eq!(tags, vec!["imported".to_string(), "imported".to_string()]);
+}
+
+#[tokio::test]
+async fn insert_omits_unmapped_targets_so_db_defaults_apply() {
+  let client = make_client().await;
+  let table = unique_table();
+  setup_table(&client, &table, "name TEXT, note TEXT DEFAULT 'from-db'").await;
+
+  let mut c = make_client().await;
+  // "note" has Source::None → must be absent from the INSERT so its default applies.
+  let targets = vec![
+    sheet_target("name", "text", 0),
+    TargetSpec {
+      db_col_name: "note".to_string(),
+      data_type: "text".to_string(),
+      source: Source::None,
+    },
+  ];
+  let rows = vec![vec!["Alice".to_string()]];
+  execute_insert(&mut c, &table, &targets, &rows).await.unwrap();
+
+  let row = client
+    .query_one(&format!("SELECT note FROM {table}"), &[])
+    .await
+    .unwrap();
+  client.execute(&format!("DROP TABLE {table}"), &[]).await.unwrap();
+  let note: &str = row.get(0);
+  assert_eq!(note, "from-db", "unmapped column should keep its DB default");
+}
+
+#[tokio::test]
+async fn insert_resolves_sheet_sources_by_index_honouring_target_order() {
+  // Target order drives the column list; each Source pulls from its own sheet index.
+  let client = make_client().await;
+  let table = unique_table();
+  setup_table(&client, &table, "a TEXT, b TEXT").await;
+
+  let mut c = make_client().await;
+  // Target "a" is sourced from sheet index 1, target "b" from sheet index 0.
+  let targets = vec![sheet_target("a", "text", 1), sheet_target("b", "text", 0)];
+  let rows = vec![vec!["zero".to_string(), "one".to_string()]];
+  execute_insert(&mut c, &table, &targets, &rows).await.unwrap();
+
+  let row = client
+    .query_one(&format!("SELECT a, b FROM {table}"), &[])
+    .await
+    .unwrap();
+  client.execute(&format!("DROP TABLE {table}"), &[]).await.unwrap();
+  let a: &str = row.get(0);
+  let b: &str = row.get(1);
+  assert_eq!(a, "one");
+  assert_eq!(b, "zero");
 }
 
 #[tokio::test]
@@ -411,9 +487,9 @@ async fn insert_with_schema_qualified_table_name() {
   client.execute(&format!("CREATE TABLE public.{table} (x TEXT)"), &[]).await.unwrap();
 
   let mut c = make_client().await;
-  let headers = vec!["x".to_string()];
+  let targets = vec![sheet_target("x", "text", 0)];
   let rows = vec![vec!["hello".to_string()]];
-  execute_insert(&mut c, &format!("public.{table}"), &[], &[], &headers, &rows)
+  execute_insert(&mut c, &format!("public.{table}"), &targets, &rows)
     .await
     .unwrap();
 
@@ -429,13 +505,12 @@ async fn insert_rolls_back_entire_batch_on_type_cast_error() {
   setup_table(&client, &table, "n INTEGER").await;
 
   let mut c = make_client().await;
-  let headers = vec!["n".to_string()];
-  let col_types = vec!["integer".to_string()];
+  let targets = vec![sheet_target("n", "integer", 0)];
   let rows = vec![
     vec!["1".to_string()],            // valid
     vec!["not_a_number".to_string()], // invalid — causes the transaction to fail
   ];
-  let result = execute_insert(&mut c, &table, &[], &col_types, &headers, &rows).await;
+  let result = execute_insert(&mut c, &table, &targets, &rows).await;
 
   let n = row_count(&client, &table).await;
   client.execute(&format!("DROP TABLE {table}"), &[]).await.unwrap();

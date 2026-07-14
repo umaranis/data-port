@@ -1,7 +1,6 @@
 <script lang="ts">
   import * as Table from "$lib/components/ui/table";
   import Paging from "$lib/Paging.svelte";
-  import ColumnTypeHeader from "$lib/ColumnTypeHeader.svelte";
   import type { SheetDataClass } from "./model/SheetDataClass.svelte";
 
   type Props = {
@@ -16,19 +15,10 @@
     <Table.Header>
       <Table.Row>
         {#each data.sheet.columns as col}
-          <Table.Head class="border align-top bg-gray-100 dark:bg-gray-900">
-            <ColumnTypeHeader meta={col} sheet={data.sheet} />
-          </Table.Head>
-        {/each}
-      </Table.Row>
-      <Table.Row>
-        {#each data.sheet.columns as col}
-          {#if col.type == "sheet"}
-            <Table.Head
-              class="border whitespace-nowrap bg-gray-50 dark:bg-gray-950 font-semibold"
-              >{col.header}</Table.Head
-            >
-          {/if}
+          <Table.Head
+            class="border whitespace-nowrap bg-gray-50 dark:bg-gray-950 font-semibold"
+            >{col.header}</Table.Head
+          >
         {/each}
       </Table.Row>
     </Table.Header>

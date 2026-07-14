@@ -71,13 +71,6 @@ export class WorkbookClass extends AsyncResource {
   }
 
   toSnapshot(): ProjectSheet[] {
-    return this.sheets.map((s) => ({
-      name: s.name,
-      action: s.action,
-      tableName: s.tableName,
-      headerRow: s.headerRow,
-      skipRows: s.skipRows,
-      columns: [...s.columns],
-    }));
+    return this.sheets.map((s) => s.toSnapshot());
   }
 }

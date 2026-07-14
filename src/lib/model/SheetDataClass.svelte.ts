@@ -1,7 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import { AsyncResource } from "./AsyncResource.svelte";
 import type { SheetClass } from "./SheetClass.svelte";
-import type { DatabaseClass } from "./DatabaseClass.svelte";
 
 const PAGE_SIZE = 10;
 export type InsertStatus =
@@ -46,26 +45,6 @@ export class SheetDataClass extends AsyncResource {
     );
     this.rows = result.rows;
     this.totalRows = result.total_rows;
-  }
-
-  public async insertAllRows(database: DatabaseClass): Promise<InsertStatus> {
-    try {
-      const command =
-        database.dbType === "db2" ? "db2_insert_rows" : "pg_insert_rows";
-      const count = await invoke<number>(command, {
-        connString: database.connectionString,
-        path: this.sheet.workbook.filePath,
-        sheet: this.sheet.name,
-        tableName: this.sheet.tableName,
-        columnTypes: this.sheet.columns.map((m) => m.dataType),
-        columnNames: this.sheet.columns.map((m) => m.dbColName),
-        headerRow: this.sheet.headerRow,
-        skipRows: this.sheet.skipRows,
-      });
-      return { success: true, count };
-    } catch (e) {
-      return { success: false, error: String(e) };
-    }
   }
 
   public async skipBlankRows() {

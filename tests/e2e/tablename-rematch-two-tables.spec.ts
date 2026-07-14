@@ -64,15 +64,12 @@ test.describe("tableName change re-matching with two tables", () => {
     await expect(page.getByRole("tab", { name: "Sheet1" })).toBeVisible();
   });
 
-  test("all dbColName inputs are filled before any table is selected", async ({
+  test("no mapping rows are shown before any table is selected", async ({
     page,
   }) => {
     await page.getByRole("button", { name: "Mapping" }).click();
-    const inputs = page.getByRole("table").locator('input[type="text"]');
-    await expect(inputs.nth(0)).toHaveValue("id");
-    await expect(inputs.nth(1)).toHaveValue("name");
-    await expect(inputs.nth(2)).toHaveValue("email");
-    await expect(inputs.nth(3)).toHaveValue("dept");
+    const rows = page.getByRole("table").locator("tbody tr");
+    await expect(rows).toHaveCount(0);
   });
 
   test("selecting employees_table matches id and name, clears email and dept", async ({

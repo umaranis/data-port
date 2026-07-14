@@ -1,5 +1,6 @@
 <script lang="ts">
   import { SheetClass } from "$lib/model/SheetClass.svelte";
+  import { SheetMappingClass } from "$lib/model/SheetMappingClass.svelte";
   import { type InsertStatus } from "$lib/model/SheetDataClass.svelte";
   import GenerateSqlDialog from "$lib/GenerateSqlDialog.svelte";
   import { Button } from "$lib/components/ui/button";
@@ -7,9 +8,10 @@
 
   type Props = {
     sheet: SheetClass;
+    mapping: SheetMappingClass;
   };
 
-  let { sheet }: Props = $props();
+  let { sheet, mapping }: Props = $props();
 
   let sqlDialog = $state<GenerateSqlDialog | null>(null);
   let database = getDatabaseContext();
@@ -18,10 +20,10 @@
   let inserting = $state(false);
 
   async function insertRows() {
-    if (!sheet.loaded || !sheet.tableName || !database.connectionString) return;
+    if (!sheet.loaded || !mapping.tableName || !database.connectionString)
+      return;
 
-    const anyBlankColumnName = sheet.columns.find((c) => !c.dbColName);
-    if (anyBlankColumnName) {
+    if (!mapping.allColumnNamesSet) {
       insertStatus = {
         success: false,
         error: "All column names must be set before inserting.",
@@ -30,12 +32,12 @@
     }
     inserting = true;
     insertStatus = null;
-    insertStatus = await sheet.data.insertAllRows(database);
+    insertStatus = await mapping.insertRows();
     inserting = false;
   }
 </script>
 
-{#if sheet.action === "create" || sheet.action === "recreate"}
+{#if mapping.action === "create" || mapping.action === "recreate"}
   <div class="flex flex-col gap-1">
     <div class="flex items-center gap-2">
       <label for="table-name" class="text-sm whitespace-nowrap"
@@ -44,7 +46,7 @@
       <input
         id="table-name"
         type="text"
-        bind:value={sheet.tableName}
+        bind:value={mapping.tableName}
         class="border rounded px-2 py-1 text-sm w-48"
       />
       <Button
@@ -55,7 +57,7 @@
       <Button
         variant="outline"
         size="sm"
-        disabled={sheet.columns.length === 0}
+        disabled={mapping.columns.length === 0}
         onclick={() => sqlDialog?.open()}
       >
         Generate SQL
@@ -63,7 +65,7 @@
       <Button
         variant="outline"
         size="sm"
-        disabled={!database.connectionString || !sheet.tableName || inserting}
+        disabled={!database.connectionString || !mapping.tableName || inserting}
         onclick={() => insertRows()}
       >
         {inserting ? "Inserting…" : "Insert rows"}
@@ -83,12 +85,12 @@
   </div>
   <GenerateSqlDialog
     bind:this={sqlDialog}
-    {sheet}
+    {mapping}
     connectionString={database.connectionString}
     dbType={database.dbType}
-    dropTable={sheet.action === "recreate"}
+    dropTable={mapping.action === "recreate"}
   />
-{:else if sheet.action === "append"}
+{:else if mapping.action === "append"}
   <div class="flex flex-col gap-1">
     <div class="flex items-center gap-2">
       <label for="append-table" class="text-sm whitespace-nowrap"
@@ -99,7 +101,8 @@
       {:else}
         <select
           id="append-table"
-          bind:value={sheet.tableName}
+          value={mapping.tableName ?? ""}
+          onchange={(e) => mapping.setTableName(e.currentTarget.value || null)}
           class="border rounded px-2 py-1 text-sm dark:bg-gray-800 dark:border-gray-600"
         >
           <option value="">— none —</option>
@@ -111,7 +114,7 @@
       <Button
         variant="outline"
         size="sm"
-        disabled={!database.connectionString || !sheet.tableName || inserting}
+        disabled={!database.connectionString || !mapping.tableName || inserting}
         onclick={() => insertRows()}
       >
         {inserting ? "Inserting…" : "Insert rows"}

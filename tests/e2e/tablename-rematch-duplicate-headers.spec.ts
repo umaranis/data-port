@@ -62,15 +62,31 @@ test.describe("tableName change re-matching with duplicate column headers", () =
     await expect(page.getByRole("tab", { name: "Sheet1" })).toBeVisible();
   });
 
-  test("both duplicate-header columns show the same auto-derived dbColName before tableName is selected", async ({
+  test("no mapping rows are shown before an append table is selected", async ({
     page,
   }) => {
     await page.getByRole("button", { name: "Mapping" }).click();
-    const inputs = page.getByRole("table").locator('input[type="text"]');
-    await expect(inputs.nth(0)).toHaveValue("id");
-    await expect(inputs.nth(1)).toHaveValue("name");
-    await expect(inputs.nth(2)).toHaveValue("name");
-    await expect(inputs.nth(3)).toHaveValue("dept");
+    const rows = page.getByRole("table").locator("tbody tr");
+    await expect(rows).toHaveCount(0);
+  });
+
+  test("the second duplicate column is not auto-matched to the DB column", async ({
+    page,
+  }) => {
+    await page.getByRole("button", { name: "Mapping" }).click();
+    await page.locator("#append-table").selectOption("employees_table");
+
+    // Each DB column auto-matches at most one sheet column (tracked as a used index),
+    // so DB "name" resolves to the FIRST sheet "name" (index 1), not the second.
+    const call = await page.evaluate(() => {
+      const rows = document
+        .querySelectorAll("table tbody tr")
+        [1]?.querySelectorAll("td");
+      // Source dropdown is the 3rd cell (index 2); its selected option value is the index.
+      const select = rows?.[2]?.querySelector("select") as HTMLSelectElement;
+      return select?.value;
+    });
+    expect(call).toBe("1");
   });
 
   test("first duplicate column is preserved and consumes the DB entry", async ({
