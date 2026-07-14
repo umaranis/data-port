@@ -10,6 +10,12 @@ export default defineConfig(async () => ({
 
   test: {
     include: ["src/**/*.test.ts"],
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "html", "lcov"],
+      include: ["src/lib/**/*.{ts,svelte.ts}"],
+      exclude: ["src/lib/components/ui/**", "**/*.test.ts"],
+    },
   },
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`

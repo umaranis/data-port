@@ -19,6 +19,12 @@ Use `pnpm` (there is a `pnpm-lock.yaml`).
 - `pnpm test:e2e` — Playwright e2e (uses `tauri-mock.ts` to mock the Rust backend; runs against the Vite dev server, not the real app).
 - Rust backend tests: `cd src-tauri && cargo test`. Tests live in colocated `*_tests.rs` files (e.g. `db_tests.rs`, `infer_tests.rs`) wired in via `#[path = "..."] mod tests;`. Note: `db_tests.rs` are **live-PostgreSQL integration tests** — they connect to `TEST_DATABASE_URL` (set in `src-tauri/.cargo/config.toml`, defaulting to `postgresql://postgres:postgres@localhost/postgres`) and fail if that database is unreachable. The rest (`infer_tests.rs`, etc.) are pure unit tests with no DB dependency.
 
+### Code coverage
+
+- Frontend: `pnpm test:unit:coverage` (Vitest + `@vitest/coverage-v8`). Coverage is scoped to `src/lib/**` and excludes the vendored `src/lib/components/ui/**`. Reports print to the terminal and write `coverage/` (HTML at `coverage/index.html`, plus `lcov`); `coverage/` is gitignored.
+- Backend: `cd src-tauri && cargo llvm-cov` (requires `cargo install cargo-llvm-cov` and `rustup component add llvm-tools-preview`). Add `--html` for a browsable report at `src-tauri/target/llvm-cov/html/index.html`. It runs the full test suite, so the same live-PostgreSQL requirement as `cargo test` applies (`db2.rs` and `lib.rs` show near-zero coverage — DB2 paths need the ODBC driver, `lib.rs` has no tests).
+- CI runs both on every push/PR and uploads the `lcov` reports as `frontend-coverage` / `rust-coverage` artifacts.
+
 DB2 support requires unixODBC and the IBM DB2 CLI driver installed on the machine — see [db2-setup.md](db2-setup.md). Without them the DB2 features and the `odbc-api` build will fail.
 
 ## Rust backend (`src-tauri/src`)

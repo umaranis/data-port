@@ -11,5 +11,6 @@ vite.config.ts.timestamp-*
 test-results/.last-run.json
 .idea/
 /test-results/
+/coverage/
 .cargo/
 .claude/
