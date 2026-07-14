@@ -1,9 +1,30 @@
-import { invoke } from "@tauri-apps/api/core";
 import type { DbColumn } from "./pgTypes";
 import type { DbType } from "./projectTypes";
 import { AsyncResource } from "./AsyncResource.svelte";
+import {
+  pgDb,
+  db2Db,
+  type Db,
+  type InsertRowsParams,
+  type TypeMeta,
+} from "./Db";
 
 export class DatabaseClass extends AsyncResource {
+  /** Optional adapter override, injected for tests. When set it wins over the
+   * `dbType`-derived adapter. */
+  private readonly _dbOverride: Db | null;
+
+  constructor(db?: Db) {
+    super();
+    this._dbOverride = db ?? null;
+  }
+
+  /** The active adapter: the injected override if present, otherwise the one
+   * matching the reactive `dbType`. */
+  private get db(): Db {
+    return this._dbOverride ?? (this._dbType === "db2" ? db2Db : pgDb);
+  }
+
   private _dbType: DbType = $state("postgres");
   get dbType(): DbType {
     return this._dbType;
@@ -21,11 +42,7 @@ export class DatabaseClass extends AsyncResource {
 
     if (value) {
       this.load(async () => {
-        const command =
-          this._dbType === "db2" ? "db2_get_tables" : "pg_get_tables";
-        return invoke<string[]>(command, {
-          connString: this.connectionString,
-        }).then((tables) => {
+        return this.getTables().then((tables) => {
           this._tables = tables;
           this._dbColumns.clear();
         });
@@ -41,6 +58,11 @@ export class DatabaseClass extends AsyncResource {
     return this._tables;
   }
 
+  /** List the tables in the active connection and dialect. */
+  public getTables(): Promise<string[]> {
+    return this.db.getTables(this.connectionString!);
+  }
+
   private _dbColumns: Map<string, DbColumn[]> = $state(new Map());
   public async loadDbColumns(
     tableName: string,
@@ -48,12 +70,7 @@ export class DatabaseClass extends AsyncResource {
     let table = this._dbColumns.get(tableName);
     if (!table) {
       try {
-        const command =
-          this._dbType === "db2" ? "db2_get_columns" : "pg_get_columns";
-        table = await invoke<DbColumn[]>(command, {
-          connString: this.connectionString!,
-          tableName,
-        });
+        table = await this.db.getColumns(this.connectionString!, tableName);
       } catch (e) {
         this.error = String(e);
         return [];
@@ -61,5 +78,26 @@ export class DatabaseClass extends AsyncResource {
       this._dbColumns.set(tableName, table);
     }
     return table;
+  }
+
+  /** Run arbitrary SQL against the active connection and dialect. */
+  public execute(sql: string): Promise<void> {
+    return this.db.execute(this.connectionString!, sql);
+  }
+
+  /** Insert sheet rows into a table. `connString` is supplied from the owned
+   * connection string; callers pass the rest of the payload. */
+  public insertRows(
+    params: Omit<InsertRowsParams, "connString">,
+  ): Promise<number> {
+    return this.db.insertRows({
+      ...params,
+      connString: this.connectionString,
+    });
+  }
+
+  /** Render a column's type string in the active dialect. */
+  public typeStr(meta: TypeMeta): string {
+    return this.db.typeStr(meta);
   }
 }
