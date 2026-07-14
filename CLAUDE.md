@@ -17,7 +17,7 @@ Use `pnpm` (there is a `pnpm-lock.yaml`).
 - `pnpm format` — Prettier over `src`.
 - `pnpm test:unit` — Vitest (frontend unit tests, `src/**/*.test.ts`). Run a single file: `pnpm test:unit src/lib/SkipRows.test.ts`.
 - `pnpm test:e2e` — Playwright e2e (uses `tauri-mock.ts` to mock the Rust backend; runs against the Vite dev server, not the real app).
-- Rust tests: `cd src-tauri && cargo test`. Tests live in colocated `*_tests.rs` files (e.g. `db_tests.rs`, `infer_tests.rs`) wired in via `#[path = "..."] mod tests;`.
+- Rust backend tests: `cd src-tauri && cargo test`. Tests live in colocated `*_tests.rs` files (e.g. `db_tests.rs`, `infer_tests.rs`) wired in via `#[path = "..."] mod tests;`. Note: `db_tests.rs` are **live-PostgreSQL integration tests** — they connect to `TEST_DATABASE_URL` (set in `src-tauri/.cargo/config.toml`, defaulting to `postgresql://postgres:postgres@localhost/postgres`) and fail if that database is unreachable. The rest (`infer_tests.rs`, etc.) are pure unit tests with no DB dependency.
 
 DB2 support requires unixODBC and the IBM DB2 CLI driver installed on the machine — see [db2-setup.md](db2-setup.md). Without them the DB2 features and the `odbc-api` build will fail.
 

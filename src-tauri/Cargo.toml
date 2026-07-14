@@ -2,7 +2,7 @@
 name = "data-port"
 version = "0.1.0"
 description = "A Tauri App"
-authors = ["you"]
+authors = ["Syed Umar Anis"]
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -32,4 +32,3 @@ odbc-api = "8"
 
 [dev-dependencies]
 tokio = { version = "1", features = ["macros"] }
-
