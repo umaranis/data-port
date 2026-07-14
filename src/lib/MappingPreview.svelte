@@ -1,10 +1,7 @@
 <script lang="ts">
-  import { invoke } from "@tauri-apps/api/core";
   import * as Table from "$lib/components/ui/table";
   import { Button } from "$lib/components/ui/button";
   import Paging from "$lib/Paging.svelte";
-  import { pgTypeStr } from "$lib/model/pgTypes";
-  import { db2TypeStr } from "$lib/model/db2Types";
   import { resolvePreviewCell } from "$lib/model/mappingTypes";
   import type { SheetClass } from "./model/SheetClass.svelte";
   import type { SheetMappingClass } from "./model/SheetMappingClass.svelte";
@@ -30,10 +27,9 @@
   let sql = $derived.by(() => {
     if (mapping.action === "append") return "";
     if (!mapping.tableName || shownColumns.length === 0) return "";
-    const typeStr = database.dbType === "db2" ? db2TypeStr : pgTypeStr;
     const cols = shownColumns
       .filter((cm) => cm.target.dbColName)
-      .map((cm) => `  "${cm.target.dbColName}" ${typeStr(cm.target)}`);
+      .map((cm) => `  "${cm.target.dbColName}" ${database.typeStr(cm.target)}`);
     const create = `CREATE TABLE "${mapping.tableName}" (\n${cols.join(",\n")}\n);`;
     return dropTable
       ? `DROP TABLE IF EXISTS "${mapping.tableName}";\n${create}`
@@ -52,8 +48,7 @@
     executing = true;
     status = null;
     try {
-      const command = database.dbType === "db2" ? "db2_execute" : "pg_execute";
-      await invoke(command, { connString, sql });
+      await database.execute(sql);
       status = { ok: true };
     } catch (e) {
       status = { ok: false, error: String(e) };
