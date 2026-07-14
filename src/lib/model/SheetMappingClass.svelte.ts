@@ -180,6 +180,27 @@ export class SheetMappingClass {
     );
   }
 
+  /** The generated DDL for this mapping, or `""` when nothing is created. Append
+   * has no DDL; a blank table name or no participating (non-`none`) columns also
+   * yield `""`. Blank-named columns are dropped from the `CREATE`, and recreate
+   * prepends a `DROP`. Rendering is delegated to the active dialect. */
+  public get ddl(): string {
+    if (this._action === "append") return "";
+    if (!this._tableName) return "";
+    const participating = this._columns.filter(
+      (cm) => cm.source.kind !== "none",
+    );
+    if (participating.length === 0) return "";
+    const columns = participating
+      .filter((cm) => cm.target.dbColName)
+      .map((cm) => ({ ...cm.target, dbColName: cm.target.dbColName as string }));
+    return this.database.renderDdl({
+      tableName: this._tableName,
+      columns,
+      drop: this._action === "recreate",
+    });
+  }
+
   public async insertRows(): Promise<InsertStatus> {
     try {
       const targets = this._columns.map((cm) => ({

@@ -21,20 +21,8 @@
     mapping.columns.filter((cm) => cm.source.kind !== "none"),
   );
 
-  let dropTable = $derived(mapping.action === "recreate");
-
-  /** Generated DDL. Append has no DDL; create/recreate render CREATE (+ DROP). */
-  let sql = $derived.by(() => {
-    if (mapping.action === "append") return "";
-    if (!mapping.tableName || shownColumns.length === 0) return "";
-    const cols = shownColumns
-      .filter((cm) => cm.target.dbColName)
-      .map((cm) => `  "${cm.target.dbColName}" ${database.typeStr(cm.target)}`);
-    const create = `CREATE TABLE "${mapping.tableName}" (\n${cols.join(",\n")}\n);`;
-    return dropTable
-      ? `DROP TABLE IF EXISTS "${mapping.tableName}";\n${create}`
-      : create;
-  });
+  /** Generated DDL, rendered by the Mapping and its active dialect. */
+  let sql = $derived(mapping.ddl);
 
   let connString = $state("");
   $effect(() => {

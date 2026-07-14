@@ -5,6 +5,7 @@ import {
   pgDb,
   db2Db,
   type Db,
+  type DdlSpec,
   type InsertRowsParams,
   type TypeMeta,
 } from "./Db";
@@ -99,5 +100,10 @@ export class DatabaseClass extends AsyncResource {
   /** Render a column's type string in the active dialect. */
   public typeStr(meta: TypeMeta): string {
     return this.db.typeStr(meta);
+  }
+
+  /** Render a filtered DDL spec to SQL in the active dialect. */
+  public renderDdl(spec: DdlSpec): string {
+    return this.db.renderDdl(spec);
   }
 }

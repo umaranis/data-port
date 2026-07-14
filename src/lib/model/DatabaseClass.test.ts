@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { flushSync } from "svelte";
 import { DatabaseClass } from "./DatabaseClass.svelte";
-import type { Db, InsertRowsParams, TypeMeta } from "./Db";
+import type { Db, DdlSpec, InsertRowsParams, TypeMeta } from "./Db";
 import type { DbColumn } from "./pgTypes";
 
 /** A fake adapter that records every call and returns canned values, so tests can
@@ -11,6 +11,7 @@ class FakeDb implements Db {
   public getColumnsCalls: { connString: string; tableName: string }[] = [];
   public executeCalls: { connString: string; sql: string }[] = [];
   public insertRowsCalls: InsertRowsParams[] = [];
+  public renderDdlCalls: DdlSpec[] = [];
 
   constructor(
     private readonly opts: {
@@ -18,6 +19,7 @@ class FakeDb implements Db {
       columns?: DbColumn[];
       insertCount?: number;
       typeStr?: string;
+      ddl?: string;
     } = {},
   ) {}
 
@@ -39,6 +41,10 @@ class FakeDb implements Db {
   }
   typeStr(_meta: TypeMeta): string {
     return this.opts.typeStr ?? "FAKE";
+  }
+  renderDdl(spec: DdlSpec): string {
+    this.renderDdlCalls.push(spec);
+    return this.opts.ddl ?? "FAKE-DDL";
   }
 }
 
@@ -107,6 +113,21 @@ describe("DatabaseClass adapter routing", () => {
       },
     ]);
   });
+
+  it("renderDdl routes the spec to the adapter and returns its SQL", () => {
+    const fake = new FakeDb({ ddl: "FAKE-CREATE" });
+    const db = new DatabaseClass(fake);
+
+    const spec = {
+      tableName: "orders",
+      columns: [{ dbColName: "id", dataType: "integer" as const }],
+      drop: false,
+    };
+    const sql = db.renderDdl(spec);
+
+    expect(sql).toBe("FAKE-CREATE");
+    expect(fake.renderDdlCalls).toEqual([spec]);
+  });
 });
 
 describe("DatabaseClass column caching", () => {
@@ -149,6 +170,35 @@ describe("DatabaseClass dialect selection (no override)", () => {
     db.dbType = "db2";
 
     expect(db.typeStr({ dataType: "text" })).toBe("CLOB(1M)");
+  });
+
+  it("renderDdl renders Postgres type strings when dbType is postgres", () => {
+    const db = new DatabaseClass();
+    db.dbType = "postgres";
+
+    const sql = db.renderDdl({
+      tableName: "orders",
+      columns: [{ dbColName: "note", dataType: "text" }],
+      drop: false,
+    });
+
+    expect(sql).toBe('CREATE TABLE "orders" (\n  "note" TEXT\n);');
+  });
+
+  it("renderDdl renders DB2 type strings and prepends DROP when requested", () => {
+    const db = new DatabaseClass();
+    db.dbType = "db2";
+
+    const sql = db.renderDdl({
+      tableName: "orders",
+      columns: [{ dbColName: "note", dataType: "text" }],
+      drop: true,
+    });
+
+    expect(sql).toBe(
+      'DROP TABLE IF EXISTS "orders";\n' +
+        'CREATE TABLE "orders" (\n  "note" CLOB(1M)\n);',
+    );
   });
 });
 
